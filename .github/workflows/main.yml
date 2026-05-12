@@ -36,4 +36,3 @@ jobs:
       e2e-report-artifact-name: playwright-report-main-smoke
       run-package: true
       package-command: pnpm run build:package:prod
-      upload-package-artifact: true
