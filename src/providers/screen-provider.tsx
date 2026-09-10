@@ -2,6 +2,7 @@ import {
   AnimateScreen,
   type AnimateScreenOptions
 } from '@/components/animate-screen';
+import { useAppLifecycleLock } from '@/hooks/use-app-lifecycle-lock';
 import { ScreenContext } from '@/hooks/use-screen';
 import { useSessionTimeout } from '@/hooks/use-session-timeout';
 import { hasSeenOnboarding } from '@/lib/onboarding';
@@ -70,6 +71,10 @@ export const ScreenProvider = () => {
     activeScreen: navigationState.activeScreen,
     isVaultUnlocked: () => vault.isUnlocked(),
     onTimeout: handleSessionTimeout
+  });
+
+  useAppLifecycleLock({
+    onLock: handleSessionTimeout
   });
 
   useEffect(() => {

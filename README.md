@@ -1,39 +1,33 @@
-# Quantum Vault
+# Quantum Vault (iOS)
 
-Quantum Vault by [Project Eleven](https://projecteleven.com/) provides sensible quantum security on Bitcoin & Ethereum today.
+Capacitor iOS/iPad port of [Quantum Vault](https://github.com/p-11/quantum-vault) by [Project Eleven](https://projecteleven.com/), forked from release **v1.0.1**.
 
-Built for the quantum era, Quantum Vault keeps BTC and ETH protected behind hash functions, monitors for public key exposure, and warns you when a vault becomes vulnerable.
+First build: **Bitcoin testnet only**. Mainnet is disabled. `@project-eleven/libqc@1.0.0` remains the pinned SDK.
 
-Quantum Vault is a practical first step to reduce exposure today while the ecosystem moves toward full post-quantum security.
+See `IOS_PORT_PLAN.md` for the Chrome-extension → Capacitor inventory.
 
-> This is a reference implementation rather than a production wallet. The code has been audited by Cure53.
+## Requirements
 
-## Install
+- Node.js + **pnpm** only
+- Xcode (for simulator/device builds)
+- CocoaPods (via Capacitor iOS workflow)
 
-1. Download `chrome-extension.zip` from the latest [release](https://github.com/p-11/quantum-vault/releases) and unzip it.
-2. Open `chrome://extensions/`, toggle **Developer mode** on, click **Load unpacked**, and select the unzipped folder.
-
-Works on Chrome and other Chromium browsers (Brave, Edge, Arc).
-
-## Build From Source
-
-Requires [Node.js](https://nodejs.org/en) and [pnpm](https://pnpm.io/).
+## Setup
 
 ```sh
-git clone https://github.com/p-11/quantum-vault.git
-cd quantum-vault
-cp .env.example .env   # fill in the values
+cp .env.example .env   # set VITE_BITCOIN_API_URL (testnet), VITE_ASSET_PRICES_URL, VITE_REGISTER_URL
 pnpm install
-pnpm build:dev         # output in build/
+pnpm build:prod
+pnpm exec cap add ios   # first time only
+pnpm cap:sync
+pnpm cap:open           # opens Xcode
 ```
 
-Then load `build/` as an unpacked extension. See `.env.example` for the required environment variables.
+## Security notes
 
-For local development with HMR: `pnpm dev`.
-
-## Issues
-
-File bugs on [GitHub Issues](https://github.com/p-11/quantum-vault/issues). For security disclosures, contact Project Eleven directly.
+- Vault durable state uses Keychain-backed `LibQCStorage` (not `localStorage`).
+- App background/inactive locks the vault via the same `clearWalletState` → `vault.lock()` path as idle timeout.
+- Never log passwords, mnemonics, keys, or encrypted wallet contents.
 
 ## License
 

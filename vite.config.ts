@@ -2,9 +2,7 @@ import { spawnSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { crx } from '@crxjs/vite-plugin';
 import path from 'path';
-import manifest from './manifest.json';
 import packageJson from './package.json';
 import { defineConfig } from 'vite';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
@@ -60,23 +58,8 @@ export default defineConfig(({ command, isPreview, mode }) => {
     libqcDependencySpec,
     libqcResolvedVersion: readJsonStringField(libqcPackageJsonPath, 'version'),
     buildMode: mode,
-    runtimeVariant: isHmrRuntime ? 'hmr' : 'extension'
+    runtimeVariant: isHmrRuntime ? 'hmr' : 'capacitor'
   };
-
-  const extensionRuntimePlugin = isHmrRuntime
-    ? crx({ manifest })
-    : viteStaticCopy({
-        targets: [
-          {
-            src: 'manifest.json',
-            dest: '.'
-          },
-          {
-            src: 'icons/*',
-            dest: 'icons'
-          }
-        ]
-      });
 
   const fontAssetsPlugin = viteStaticCopy({
     targets: [
@@ -94,26 +77,20 @@ export default defineConfig(({ command, isPreview, mode }) => {
           plugins: ['babel-plugin-react-compiler']
         }
       }),
-      extensionRuntimePlugin,
       fontAssetsPlugin,
       tailwindcss(),
       nodePolyfills()
     ],
-    build: isHmrRuntime
-      ? {
-          outDir: 'build-hmr'
+    build: {
+      outDir: mode === 'production' ? 'dist' : 'build',
+      minify: mode === 'production',
+      sourcemap: mode === 'production' ? 'hidden' : false,
+      rollupOptions: {
+        input: {
+          main: './index.html'
         }
-      : {
-          outDir: mode === 'production' ? 'dist' : 'build',
-          minify: mode === 'production',
-          sourcemap: mode === 'production' ? 'hidden' : false,
-          target: mode === 'production' ? 'chrome110' : undefined,
-          rollupOptions: {
-            input: {
-              main: './index.html'
-            }
-          }
-        },
+      }
+    },
     server: isHmrRuntime
       ? {
           cors: true

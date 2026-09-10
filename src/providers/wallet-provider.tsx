@@ -44,13 +44,8 @@ import {
   resolveOwnedDestinationAccountId,
   resolveOwnedWithdrawalDestinationAccountId
 } from '@/providers/wallet-query-invalidation';
-import {
-  getBitcoinApiUrl,
-  getEthereumBundlerApiKey,
-  getEthereumBundlerRpcUrl,
-  getEthereumRpcUrl,
-  getRegisterUrl
-} from '@/lib/env';
+import { CapacitorLibQCStorage } from '@/lib/capacitor-libqc-storage';
+import { getBitcoinApiUrl, getRegisterUrl } from '@/lib/env';
 import { assertNoNonInterfaceAssetBalances } from '@/lib/vault-operations';
 import {
   loadWalletSummary,
@@ -63,8 +58,6 @@ import {
   ChainId,
   LibQC,
   Mnemonic,
-  toChain,
-  WebStorage,
   type AddressIndex,
   type Asset,
   type AssetName,
@@ -149,8 +142,9 @@ export type WithdrawVaultFundsResult = {
 
 type WithdrawReconcileSyncVisibility = 'visible' | 'silent';
 
-const storage = new WebStorage();
-const bitcoinMainnetReference = '000000000019d6689c085ae165831e93';
+const storage = new CapacitorLibQCStorage();
+/** Bitcoin testnet CAIP-2 reference (libqc `BITCOIN_TESTNET_REF`). Mainnet disabled. */
+const bitcoinTestnetReference = '000000000933ea01ad0ee984209779ba';
 const emptyAccounts: Array<PersistedAccount> = [];
 const emptyAssets: Array<Asset> = [];
 const withdrawReconcileIntervalMs = convertDuration(2, 's', 'ms');
@@ -173,22 +167,20 @@ const idleWithdrawSyncState: WithdrawSyncState = {
 const toRpcUrl = (value: string): RpcUrl => value as RpcUrl;
 
 /**
- * Builds the chain spec list lazily so the env getters
- * (`getBitcoinApiUrl`, `getEthereumRpcUrl`) are invoked at wallet boot
- * time inside an `attempt()` boundary, not at module-import time.
+ * Builds the chain spec list lazily so `getBitcoinApiUrl` is invoked at
+ * wallet boot time inside an `attempt()` boundary, not at module-import time.
  *
- * If this lived at module scope, a missing env var would throw before
- * any React boundary could catch it and the popup would fail to mount
- * with a cryptic error.
+ * First Capacitor build: Bitcoin testnet only. Mainnet BTC and Ethereum are
+ * intentionally omitted.
  */
 const buildChains = (): ChainSpecification[] => [
   {
     id: 0,
     chainId: new ChainId({
       namespace: 'bip122',
-      reference: bitcoinMainnetReference
+      reference: bitcoinTestnetReference
     }),
-    name: 'Bitcoin' as ChainName,
+    name: 'Bitcoin Testnet' as ChainName,
     network: 'bitcoin' as ChainNetwork,
     iconUrl:
       'https://assets.coingecko.com/coins/images/1/large/bitcoin.png' as IconUrl,
@@ -197,55 +189,22 @@ const buildChains = (): ChainSpecification[] => [
       name: 'Bitcoin' as AssetName,
       symbol: 'BTC' as Symbol
     },
-    testnet: false as Testnet,
+    testnet: true as Testnet,
     rpcUrls: [toRpcUrl(getBitcoinApiUrl())]
-  },
-  {
-    id: 1,
-    chainId: new ChainId({ namespace: 'eip155', reference: '1' }),
-    name: 'Ethereum' as ChainName,
-    network: 'ethereum' as ChainNetwork,
-    iconUrl:
-      'https://assets.coingecko.com/asset_platforms/images/279/large/ethereum.png' as IconUrl,
-    nativeCurrency: {
-      decimals: 18 as Decimals,
-      name: 'Ether' as AssetName,
-      symbol: 'ETH' as Symbol
-    },
-    testnet: false as Testnet,
-    rpcUrls: [toRpcUrl(getEthereumRpcUrl())]
   }
 ];
 
 /**
- * Creates a bundler config provider closed over the same resolved chain
- * list that LibQC receives. The factory shape exists so both LibQC and
- * the bundler provider can be constructed lazily inside the boot
- * `attempt()` block, sharing one `chains` array. The bundler env reads
- * (`getEthereumBundlerRpcUrl`, `getEthereumBundlerApiKey`) stay lazy -
- * they only throw when an account-abstraction transaction is actually
- * submitted, not at boot.
+ * Bundler config is unused while Ethereum is disabled. Kept as a no-op
+ * provider so LibQC's constructor shape stays unchanged without enabling
+ * mainnet account-abstraction paths.
  */
 const createBundlerConfigProvider =
-  (chains: ChainSpecification[]): BundlerConfigProvider =>
+  (_chains: ChainSpecification[]): BundlerConfigProvider =>
   chainId => {
-    const chain = chains.find(c => c.chainId.toString() === chainId.toString());
-    if (!chain) {
-      throw new Error(`Chain ${chainId.toString()} not supported`);
-    }
-
-    if (chainId.toString() === 'eip155:1') {
-      return {
-        chain: toChain(chain),
-        urls: [toRpcUrl(getEthereumBundlerRpcUrl())],
-        headers: {
-          // P11TODO: remove once we no longer need to pass an API key
-          Authorization: `Bearer ${getEthereumBundlerApiKey()}`
-        }
-      };
-    }
-
-    throw new Error(`Chain ${chainId.toString()} not supported`);
+    throw new Error(
+      `Bundler unsupported in Bitcoin-testnet-only build (${chainId.toString()})`
+    );
   };
 
 /**

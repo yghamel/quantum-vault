@@ -12,9 +12,8 @@ type TestAccount = {
   chainId: ChainId;
 };
 
-const bitcoinChainId = 'bip122:000000000019d6689c085ae165831e93';
-const ethereumChainId = 'eip155:1';
-const polygonChainId = 'eip155:137';
+const bitcoinTestnetChainId = 'bip122:000000000933ea01ad0ee984209779ba';
+const unsupportedChainId = 'eip155:137';
 
 const createChainId = (value: string): ChainId => {
   const [namespace, reference] = value.split(':');
@@ -37,57 +36,39 @@ const createAccount = (chainId: string): TestAccount => ({
 });
 
 describe('getMissingDefaultAccountChains', () => {
-  it('returns Bitcoin and Ethereum when no default accounts exist', () => {
-    const bitcoin = createChain(bitcoinChainId);
-    const ethereum = createChain(ethereumChainId);
+  it('returns Bitcoin testnet when no default accounts exist', () => {
+    const bitcoin = createChain(bitcoinTestnetChainId);
 
     const result = getMissingDefaultAccountChains({
       accounts: [],
-      supportedChains: [bitcoin, ethereum]
-    });
-
-    expect(result).toEqual([bitcoin, ethereum]);
-  });
-
-  it('returns only Bitcoin when Ethereum already exists', () => {
-    const bitcoin = createChain(bitcoinChainId);
-    const ethereum = createChain(ethereumChainId);
-
-    const result = getMissingDefaultAccountChains({
-      accounts: [createAccount(ethereumChainId)],
-      supportedChains: [bitcoin, ethereum]
+      supportedChains: [bitcoin]
     });
 
     expect(result).toEqual([bitcoin]);
   });
 
-  it('returns nothing when Bitcoin and Ethereum already exist', () => {
-    const bitcoin = createChain(bitcoinChainId);
-    const ethereum = createChain(ethereumChainId);
-    const polygon = createChain(polygonChainId);
+  it('returns nothing when Bitcoin testnet already exists', () => {
+    const bitcoin = createChain(bitcoinTestnetChainId);
+    const other = createChain(unsupportedChainId);
 
     const result = getMissingDefaultAccountChains({
-      accounts: [
-        createAccount(ethereumChainId),
-        createAccount(bitcoinChainId),
-        createAccount(polygonChainId)
-      ],
-      supportedChains: [bitcoin, ethereum, polygon]
+      accounts: [createAccount(bitcoinTestnetChainId)],
+      supportedChains: [bitcoin, other]
     });
 
     expect(result).toEqual([]);
   });
 
-  it('fails fast when a missing default chain is unsupported', () => {
-    const ethereum = createChain(ethereumChainId);
+  it('fails fast when the default Bitcoin testnet chain is unsupported', () => {
+    const other = createChain(unsupportedChainId);
 
     expect(() =>
       getMissingDefaultAccountChains({
-        accounts: [createAccount(ethereumChainId)],
-        supportedChains: [ethereum]
+        accounts: [],
+        supportedChains: [other]
       })
     ).toThrow(
-      `Expected supported default account chain ${bitcoinChainId} to be present`
+      `Expected supported default account chain ${bitcoinTestnetChainId} to be present`
     );
   });
 });

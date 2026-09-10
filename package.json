@@ -1,5 +1,5 @@
 {
-  "name": "my-app",
+  "name": "quantum-vault",
   "private": true,
   "license": "MIT",
   "version": "0.0.0",
@@ -7,14 +7,13 @@
   "packageManager": "pnpm@10.20.0",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "build:dev": "pnpm build:extension:dev",
-    "build:prod": "pnpm build:extension:prod",
-    "build:extension": "pnpm build:extension:dev",
-    "build:extension:dev": "vite build --mode development",
-    "build:extension:prod": "vite build --mode production",
+    "build": "pnpm build:prod",
+    "build:dev": "vite build --mode development",
+    "build:prod": "vite build --mode production",
+    "cap:sync": "pnpm build:prod && pnpm exec cap sync ios",
+    "cap:open": "pnpm exec cap open ios",
+    "ios": "pnpm cap:sync && pnpm cap:open",
     "validate:prod": "node scripts/validate-prod.mjs",
-    "build:package": "pnpm build:dev && rm -rf release && mkdir -p release && cd build && zip -rq ../release/chrome-extension.zip .",
-    "build:package:prod": "pnpm build:prod && pnpm validate:prod && rm -rf release && mkdir -p release && cd dist && zip -rq ../release/chrome-extension.zip .",
     "bump:libqc": "node scripts/bump-libqc.mjs",
     "ci:pr": "pnpm run l:c && pnpm run p:c && pnpm run typecheck && pnpm run knip && pnpm run test:unit && pnpm run build:prod && pnpm run validate:prod && pnpm dlx @project-eleven/dep-doc@0.0.4 --run",
     "dev": "pnpm dev:hmr",
@@ -25,8 +24,8 @@
     "l:f": "eslint \"./**/*.{ts,tsx}\" --fix",
     "libqc:freshness": "node scripts/libqc-freshness.mjs --require-latest",
     "libqc:latest": "node scripts/libqc-freshness.mjs --print-latest",
-    "p:c": "prettier --config .prettierrc \"./**/*.+(js|json|ts|tsx)\" --check --ignore-unknown",
-    "p:f": "prettier --config .prettierrc \"./**/*.+(js|json|ts|tsx)\" --write --ignore-unknown",
+    "p:c": "prettier --config .prettierrc \"./**/*.{js,json,ts,tsx}\" --check --ignore-unknown",
+    "p:f": "prettier --config .prettierrc \"./**/*.{js,json,ts,tsx}\" --write --ignore-unknown",
     "preview": "vite preview",
     "qa:prep": "bash scripts/qa-prep.sh",
     "test:e2e": "playwright test",
@@ -42,12 +41,17 @@
     "verify:libqc-source": "bash .github/scripts/verify-libqc-source.sh"
   },
   "dependencies": {
+    "@capacitor/app": "7.1.0",
+    "@capacitor/browser": "7.0.3",
+    "@capacitor/clipboard": "7.0.3",
+    "@capacitor/core": "7.4.4",
     "@project-eleven/libqc": "1.0.0",
     "@radix-ui/react-label": "2.1.8",
     "@radix-ui/react-slot": "1.2.4",
     "@radix-ui/react-tabs": "1.1.13",
     "@tailwindcss/vite": "4.2.1",
     "@tanstack/react-query": "5.99.2",
+    "capacitor-secure-storage-plugin": "0.12.0",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "framer-motion": "12.34.4",
@@ -60,7 +64,8 @@
     "tailwindcss": "4.2.1"
   },
   "devDependencies": {
-    "@crxjs/vite-plugin": "2.4.0",
+    "@capacitor/cli": "7.4.4",
+    "@capacitor/ios": "7.4.4",
     "@eslint/js": "9.39.3",
     "@playwright/test": "1.52.0",
     "@types/node": "24.11.0",
@@ -87,6 +92,7 @@
   "pnpm": {
     "overrides": {
       "tar@<=7.5.7": "7.5.8",
+      "@capacitor/cli>tar": "6.2.1",
       "rollup@<4.59.0": "4.59.0",
       "picomatch@<4.0.4": "4.0.4"
     }

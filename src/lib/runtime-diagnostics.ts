@@ -1,37 +1,17 @@
 import type { BuildMetadata } from './build-metadata';
+import { Capacitor } from '@capacitor/core';
 
 export type RuntimeDiagnostics = Readonly<{
-  extensionVersion: string;
+  appVersion: string;
   buildMetadata: BuildMetadata;
 }>;
 
 const unknownRuntimeValue = 'unknown';
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
-
-const getRecordField = (value: unknown, key: string): unknown =>
-  isRecord(value) ? value[key] : undefined;
-
-const getExtensionVersion = (): string => {
-  const chromeValue = getRecordField(globalThis, 'chrome');
-  const runtimeValue = getRecordField(chromeValue, 'runtime');
-  const getManifest = getRecordField(runtimeValue, 'getManifest');
-
-  if (typeof getManifest !== 'function') {
-    return unknownRuntimeValue;
-  }
-
-  const manifestValue = Reflect.apply(getManifest, runtimeValue, []);
-  const versionValue = getRecordField(manifestValue, 'version');
-
-  return typeof versionValue === 'string' && versionValue
-    ? versionValue
-    : unknownRuntimeValue;
-};
-
 export const getRuntimeDiagnostics = (): RuntimeDiagnostics => ({
-  extensionVersion: getExtensionVersion(),
+  appVersion: Capacitor.getPlatform()
+    ? (__BUILD_METADATA__.appVersion ?? unknownRuntimeValue)
+    : unknownRuntimeValue,
   buildMetadata: __BUILD_METADATA__
 });
 
@@ -40,8 +20,12 @@ const copyFields: ReadonlyArray<{
   getValue: (diagnostics: RuntimeDiagnostics) => string;
 }> = [
   {
-    label: 'extensionVersion',
-    getValue: diagnostics => diagnostics.extensionVersion
+    label: 'appVersion',
+    getValue: diagnostics => diagnostics.appVersion
+  },
+  {
+    label: 'platform',
+    getValue: () => Capacitor.getPlatform()
   },
   {
     label: 'buildMode',
@@ -56,7 +40,7 @@ const copyFields: ReadonlyArray<{
     getValue: diagnostics => diagnostics.buildMetadata.commitSha
   },
   {
-    label: 'appVersion',
+    label: 'packageVersion',
     getValue: diagnostics => diagnostics.buildMetadata.appVersion
   },
   {

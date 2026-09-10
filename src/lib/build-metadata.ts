@@ -1,4 +1,4 @@
-export const buildRuntimeVariants = ['hmr', 'extension'] as const;
+export const buildRuntimeVariants = ['hmr', 'capacitor'] as const;
 export type BuildRuntimeVariant = (typeof buildRuntimeVariants)[number];
 
 export type BuildMetadata = Readonly<{

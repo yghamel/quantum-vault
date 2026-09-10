@@ -184,6 +184,41 @@ purpose = "Project Eleven's core library for interacting with quantum-safe walle
 scope = "prod"
 
 [[dependency]]
+name = "@capacitor/core"
+purpose = "Capacitor runtime for iOS/iPad shell"
+scope = "prod"
+
+[[dependency]]
+name = "@capacitor/app"
+purpose = "iOS app lifecycle events for vault lock-on-background"
+scope = "prod"
+
+[[dependency]]
+name = "@capacitor/browser"
+purpose = "Open explorer URLs outside the WebView"
+scope = "prod"
+
+[[dependency]]
+name = "@capacitor/clipboard"
+purpose = "Clipboard access in WKWebView"
+scope = "prod"
+
+[[dependency]]
+name = "@capacitor/cli"
+purpose = "Capacitor project tooling"
+scope = "dev"
+
+[[dependency]]
+name = "@capacitor/ios"
+purpose = "Capacitor iOS platform project"
+scope = "dev"
+
+[[dependency]]
+name = "capacitor-secure-storage-plugin"
+purpose = "iOS Keychain backend for LibQCStorage"
+scope = "prod"
+
+[[dependency]]
 name = "qrcode.react"
 purpose = "QR code generation for deposit addresses"
 scope = "prod"
