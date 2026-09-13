@@ -13,6 +13,7 @@ type TestAccount = {
 };
 
 const bitcoinTestnetChainId = 'bip122:000000000933ea01ad0ee984209779ba';
+const sepoliaChainId = 'eip155:11155111';
 const unsupportedChainId = 'eip155:137';
 
 const createChainId = (value: string): ChainId => {
@@ -36,39 +37,56 @@ const createAccount = (chainId: string): TestAccount => ({
 });
 
 describe('getMissingDefaultAccountChains', () => {
-  it('returns Bitcoin testnet when no default accounts exist', () => {
+  it('returns Bitcoin Testnet and Sepolia when no default accounts exist', () => {
     const bitcoin = createChain(bitcoinTestnetChainId);
+    const sepolia = createChain(sepoliaChainId);
 
     const result = getMissingDefaultAccountChains({
       accounts: [],
-      supportedChains: [bitcoin]
+      supportedChains: [bitcoin, sepolia]
     });
 
-    expect(result).toEqual([bitcoin]);
+    expect(result).toEqual([bitcoin, sepolia]);
   });
 
-  it('returns nothing when Bitcoin testnet already exists', () => {
+  it('returns only Sepolia when Bitcoin Testnet already exists', () => {
     const bitcoin = createChain(bitcoinTestnetChainId);
-    const other = createChain(unsupportedChainId);
+    const sepolia = createChain(sepoliaChainId);
 
     const result = getMissingDefaultAccountChains({
       accounts: [createAccount(bitcoinTestnetChainId)],
-      supportedChains: [bitcoin, other]
+      supportedChains: [bitcoin, sepolia]
+    });
+
+    expect(result).toEqual([sepolia]);
+  });
+
+  it('returns nothing when both defaults exist', () => {
+    const bitcoin = createChain(bitcoinTestnetChainId);
+    const sepolia = createChain(sepoliaChainId);
+    const other = createChain(unsupportedChainId);
+
+    const result = getMissingDefaultAccountChains({
+      accounts: [
+        createAccount(bitcoinTestnetChainId),
+        createAccount(sepoliaChainId)
+      ],
+      supportedChains: [bitcoin, sepolia, other]
     });
 
     expect(result).toEqual([]);
   });
 
-  it('fails fast when the default Bitcoin testnet chain is unsupported', () => {
-    const other = createChain(unsupportedChainId);
+  it('fails fast when a default chain is unsupported', () => {
+    const bitcoin = createChain(bitcoinTestnetChainId);
 
     expect(() =>
       getMissingDefaultAccountChains({
         accounts: [],
-        supportedChains: [other]
+        supportedChains: [bitcoin]
       })
     ).toThrow(
-      `Expected supported default account chain ${bitcoinTestnetChainId} to be present`
+      `Expected supported default account chain ${sepoliaChainId} to be present`
     );
   });
 });

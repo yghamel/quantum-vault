@@ -67,6 +67,13 @@ export const SettingsScreen = () => {
       onSelect: () => navigate('settings-currency')
     },
     {
+      id: 'fee-schedule',
+      label: 'SERVICE FEE SCHEDULE',
+      icon: SettingsCurrencyIcon,
+      testId: 'fee-schedule-button',
+      onSelect: () => navigate('settings-fee-schedule')
+    },
+    {
       id: 'lock-wallet',
       label: 'LOCK WALLET',
       icon: SettingsLockIcon,

@@ -110,7 +110,11 @@ export const withdrawFlowCopy = {
   addAddressPlaceholder: '0x...',
   reviewTitle: 'You will send',
   reviewToLegend: 'TO',
-  reviewFeeLabel: 'TX FEES',
+  reviewFeeLabel: 'Network fee',
+  reviewServiceFeeLabel: 'Service fee',
+  reviewServiceFeeDisabled:
+    'Holding-duration service fee collection is disabled in this build (libqc single-destination emptyVault). Policy: 2% annual / 10% max when enabled.',
+  reviewTestnetWarning: 'Testnet coins have no monetary value.',
   reviewAddressLabel: (chainName: string) => `${chainName} Address`,
   cancelAction: 'CANCEL',
   confirmAction: 'CONFIRM',

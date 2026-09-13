@@ -27,6 +27,7 @@ const screenSessionTrackingPolicy: Record<ScreenKey, SessionTrackingPolicy> = {
   receive: 'always',
   settings: 'always',
   'settings-currency': 'always',
+  'settings-fee-schedule': 'always',
   'settings-lock-wallet': 'always',
   'settings-delete-wallet': 'always',
   'export-recovery-phrase': 'always',

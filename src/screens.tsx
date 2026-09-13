@@ -6,6 +6,7 @@ import { OnboardingScreen } from './components/onboarding-screen';
 import { ReceiveScreen } from './components/receive-screen';
 import { SettingsCurrencyScreen } from './components/settings/settings-currency-screen';
 import { SettingsDeleteWalletScreen } from './components/settings/settings-delete-wallet-screen';
+import { SettingsFeeScheduleScreen } from './components/settings/settings-fee-schedule-screen';
 import { SettingsLockWalletScreen } from './components/settings/settings-lock-wallet-screen';
 import { SettingsScreen } from './components/settings/settings-screen';
 import { VaultWithdrawScreen } from './components/vault-withdraw-screen';
@@ -22,6 +23,7 @@ export const screens = {
   home: <HomeScreen />,
   settings: <SettingsScreen />,
   'settings-currency': <SettingsCurrencyScreen />,
+  'settings-fee-schedule': <SettingsFeeScheduleScreen />,
   'settings-lock-wallet': <SettingsLockWalletScreen />,
   'settings-delete-wallet': <SettingsDeleteWalletScreen />,
   'export-recovery-phrase': <ExportRecoveryPhraseScreen />,

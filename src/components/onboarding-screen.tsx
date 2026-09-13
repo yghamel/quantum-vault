@@ -37,15 +37,15 @@ const onboardingStepConfig = {
     actionLabel: 'NEXT'
   },
   deposit: {
-    title: 'Deposit BTC & ETH',
+    title: 'Deposit testnet BTC & Sepolia ETH',
     description: [
       { text: 'Send ' },
-      { text: 'BTC', highlighted: true },
+      { text: 'Bitcoin Testnet', highlighted: true },
       { text: ' or ' },
-      { text: 'ETH', highlighted: true },
-      { text: ' to your Quantum Vault address to start ' },
-      { text: 'protecting funds today', highlighted: true },
-      { text: '.' }
+      { text: 'Sepolia ETH', highlighted: true },
+      { text: ' to your vault address. Assets are ' },
+      { text: 'held in vault', highlighted: true },
+      { text: ' on this device — testnet coins have no monetary value.' }
     ],
     actionLabel: 'NEXT'
   },
@@ -58,7 +58,9 @@ const onboardingStepConfig = {
         text: ' your public key on-chain, making funds '
       },
       { text: 'vulnerable', highlighted: true },
-      { text: ' to potential quantum attackers.' }
+      {
+        text: '. A separate application-level holding-duration service fee (2% annual, 10% max) may apply when enabled — see Settings.'
+      }
     ],
     actionLabel: 'GET STARTED'
   }

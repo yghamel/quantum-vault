@@ -10,9 +10,10 @@ type SupportedChainWithIdentity = {
   chainId: ChainId;
 };
 
-/** Bitcoin testnet only for the first Capacitor iOS build. */
+/** Bitcoin Testnet + Ethereum Sepolia only. No Mainnet defaults. */
 export const defaultAccountChainIds = [
-  'bip122:000000000933ea01ad0ee984209779ba'
+  'bip122:000000000933ea01ad0ee984209779ba',
+  'eip155:11155111'
 ] as const;
 
 export const hasAccountForChain = ({

@@ -6,8 +6,6 @@ import { Button } from '@/components/ui/button';
 import { RecoveryPhraseWordGrid } from '@/components/shared/recovery-phrase-word-grid';
 import { RevealedRecoveryPhrasePage } from '@/components/shared/revealed-recovery-phrase-page';
 import { useBoolean } from '@/hooks/use-boolean';
-import { attempt } from '@/lib/attempt';
-import { toastMessages } from '@/lib/content';
 
 import { exportRecoveryPhraseCopy } from '../export-recovery-phrase-copy';
 import { useExportRecoveryPhraseContext } from '../export-recovery-phrase-context';
@@ -20,7 +18,6 @@ const wordsPerPage = 12;
 const recoveryPhraseWordCount = 24;
 const recoveryPhrasePageCount = recoveryPhraseWordCount / wordsPerPage;
 const hiddenPageWords = Array.from({ length: wordsPerPage }, () => '----');
-const textDecoder = new TextDecoder();
 
 type RecoveryPhraseAction = {
   id: string;
@@ -38,22 +35,13 @@ export const RecoveryPhraseRevealStep = ({
   const startIndex = currentPage * wordsPerPage;
   const isLastPage = currentPage === recoveryPhrasePageCount - 1;
 
-  const handleCopy = async () => {
+  const handleConfirmWrittenDown = () => {
     if (recoveryPhrase === undefined) {
       toast.error(exportRecoveryPhraseCopy.missingPhrase.message);
       return;
     }
-
-    const copyResult = await attempt(() =>
-      navigator.clipboard.writeText(textDecoder.decode(recoveryPhrase))
-    );
-
-    if ('error' in copyResult) {
-      toast.error(toastMessages.unexpectedError);
-      return;
-    }
-
-    toast.success(toastMessages.copiedToClipboard);
+    // Recovery phrases must never be copied to the clipboard.
+    onExit();
   };
 
   const revealPhrase = () => {
@@ -90,13 +78,14 @@ export const RecoveryPhraseRevealStep = ({
       )
     },
     {
-      id: 'copy',
+      id: 'confirm-written',
       isVisible: isRevealed && isLastPage,
       render: () => (
         <Button
           size='flow'
           disabled={isSubmittingPassword}
-          onClick={() => void handleCopy()}
+          onClick={handleConfirmWrittenDown}
+          data-testid='confirm-recovery-phrase-written'
         >
           {exportRecoveryPhraseCopy.reveal.copyAction}
         </Button>

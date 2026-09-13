@@ -40,19 +40,18 @@ const bundled = jsBundles
   .join('\n');
 
 const bitcoinTestnetRef = '000000000933ea01ad0ee984209779ba';
+const sepoliaRef = '11155111';
 if (!bundled.includes(bitcoinTestnetRef)) {
   fail('Bitcoin testnet CAIP reference missing from production bundles');
 }
-
-// App default-account list must not still request Ethereum mainnet.
-if (bundled.includes('bip122:000000000933ea01ad0ee984209779ba') === false) {
-  fail('Bitcoin testnet default account chain missing');
+if (!bundled.includes(sepoliaRef)) {
+  fail('Ethereum Sepolia chain id missing from production bundles');
 }
 
 function report() {
   if (errors.length === 0) {
     console.log(
-      `validate:prod passed (Capacitor index.html, no extension manifest, testnet ref present, ${jsBundles.length} JS bundle(s))`
+      `validate:prod passed (Capacitor index.html, no extension manifest, testnet refs present, ${jsBundles.length} JS bundle(s))`
     );
   } else {
     for (const e of errors) console.error(`ERROR: ${e}`);

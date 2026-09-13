@@ -197,6 +197,21 @@ const ReviewStep = ({
             </p>
           )}
         </div>
+
+        <div className='mt-3 space-y-2 border border-popover px-4 py-3'>
+          <div className='flex items-center justify-between gap-2'>
+            <p className='type-footnote m-0'>
+              {withdrawFlowCopy.reviewServiceFeeLabel}
+            </p>
+            <p className='type-footnote m-0'>0 (collection disabled)</p>
+          </div>
+          <p className='type-footnote m-0 text-muted-foreground'>
+            {withdrawFlowCopy.reviewServiceFeeDisabled}
+          </p>
+          <p className='type-footnote m-0 text-muted-foreground'>
+            {withdrawFlowCopy.reviewTestnetWarning}
+          </p>
+        </div>
       </div>
 
       <div className='flex flex-col gap-3'>

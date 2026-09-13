@@ -17,6 +17,7 @@ import {
 
 const bitcoinTestnetChainId = 'bip122:000000000933ea01ad0ee984209779ba';
 const ethereumChainId = 'eip155:1';
+const sepoliaChainId = 'eip155:11155111';
 const unsupportedChainId = 'eip155:42161';
 
 const createChainId = (value: string): ChainId => {
@@ -153,14 +154,33 @@ describe('resolveSafeVaultRepairAction', () => {
 });
 
 describe('getDefaultChainGroupsToInspect', () => {
-  it('returns one group for Bitcoin testnet when a persisted account exists', () => {
+  it('returns groups for default chains that have persisted accounts', () => {
     const accounts = [
       createAccount(bitcoinTestnetChainId, '01'),
-      createAccount(ethereumChainId, '01')
+      createAccount(sepoliaChainId, '01'),
+      createAccount(sepoliaChainId, '02')
     ];
     const supportedChains = [
       { chainId: createChainId(bitcoinTestnetChainId) },
-      { chainId: createChainId(ethereumChainId) }
+      { chainId: createChainId(sepoliaChainId) }
+    ];
+
+    const groups = getDefaultChainGroupsToInspect({
+      accounts,
+      supportedChains
+    });
+
+    expect(groups).toHaveLength(2);
+    expect(groups[0].chainId.toString()).toBe(bitcoinTestnetChainId);
+    expect(groups[1].chainId.toString()).toBe(sepoliaChainId);
+    expect(groups[1].accountsOnChain).toHaveLength(2);
+  });
+
+  it('omits default chains with no persisted accounts', () => {
+    const accounts = [createAccount(bitcoinTestnetChainId, '01')];
+    const supportedChains = [
+      { chainId: createChainId(bitcoinTestnetChainId) },
+      { chainId: createChainId(sepoliaChainId) }
     ];
 
     const groups = getDefaultChainGroupsToInspect({
@@ -170,22 +190,6 @@ describe('getDefaultChainGroupsToInspect', () => {
 
     expect(groups).toHaveLength(1);
     expect(groups[0].chainId.toString()).toBe(bitcoinTestnetChainId);
-    expect(groups[0].accountsOnChain).toHaveLength(1);
-  });
-
-  it('omits Bitcoin testnet when it has no persisted accounts', () => {
-    const accounts = [createAccount(ethereumChainId, '01')];
-    const supportedChains = [
-      { chainId: createChainId(bitcoinTestnetChainId) },
-      { chainId: createChainId(ethereumChainId) }
-    ];
-
-    const groups = getDefaultChainGroupsToInspect({
-      accounts,
-      supportedChains
-    });
-
-    expect(groups).toHaveLength(0);
   });
 
   it('ignores accounts on non-default chains', () => {
@@ -193,7 +197,10 @@ describe('getDefaultChainGroupsToInspect', () => {
       createAccount(bitcoinTestnetChainId, '01'),
       createAccount(unsupportedChainId, '01')
     ];
-    const supportedChains = [{ chainId: createChainId(bitcoinTestnetChainId) }];
+    const supportedChains = [
+      { chainId: createChainId(bitcoinTestnetChainId) },
+      { chainId: createChainId(sepoliaChainId) }
+    ];
 
     const groups = getDefaultChainGroupsToInspect({
       accounts,
@@ -204,14 +211,14 @@ describe('getDefaultChainGroupsToInspect', () => {
     expect(groups[0].chainId.toString()).toBe(bitcoinTestnetChainId);
   });
 
-  it('throws when Bitcoin testnet is missing from supported chains', () => {
+  it('throws when a default chain is missing from supported chains', () => {
     expect(() =>
       getDefaultChainGroupsToInspect({
         accounts: [createAccount(bitcoinTestnetChainId, '01')],
-        supportedChains: [{ chainId: createChainId(ethereumChainId) }]
+        supportedChains: [{ chainId: createChainId(bitcoinTestnetChainId) }]
       })
     ).toThrow(
-      `Expected supported default account chain ${bitcoinTestnetChainId} to be present`
+      `Expected supported default account chain ${sepoliaChainId} to be present`
     );
   });
 });
@@ -222,7 +229,10 @@ describe('repairUnsafeDefaultAccounts', () => {
     const bitcoinAccount = createAccount(bitcoinTestnetChainId, '01');
     const vault = createRepairVault({
       accounts: [bitcoinAccount],
-      supportedChains: [{ chainId: bitcoinChain }],
+      supportedChains: [
+        { chainId: bitcoinChain },
+        { chainId: createChainId(sepoliaChainId) }
+      ],
       statusesByAccountId: {
         [bitcoinAccount.id.toString()]: 'vulnerable'
       }
@@ -242,7 +252,10 @@ describe('repairUnsafeDefaultAccounts', () => {
     const bitcoinAccount = createAccount(bitcoinTestnetChainId, '01');
     const vault = createRepairVault({
       accounts: [bitcoinAccount],
-      supportedChains: [{ chainId: createChainId(bitcoinTestnetChainId) }],
+      supportedChains: [
+        { chainId: createChainId(bitcoinTestnetChainId) },
+        { chainId: createChainId(sepoliaChainId) }
+      ],
       statusesByAccountId: {
         [bitcoinAccount.id.toString()]: 'safe'
       }
@@ -259,7 +272,10 @@ describe('repairUnsafeDefaultAccounts', () => {
     const onRepairWarning = vi.fn();
     const vault = createRepairVault({
       accounts: [bitcoinAccount],
-      supportedChains: [{ chainId: bitcoinChain }],
+      supportedChains: [
+        { chainId: bitcoinChain },
+        { chainId: createChainId(sepoliaChainId) }
+      ],
       statusesByAccountId: {},
       statusErrorByAccountId: {
         [bitcoinAccount.id.toString()]: statusError
@@ -285,7 +301,10 @@ describe('repairUnsafeDefaultAccounts', () => {
     const onRepairWarning = vi.fn();
     const vault = createRepairVault({
       accounts: [bitcoinAccount],
-      supportedChains: [{ chainId: bitcoinChain }],
+      supportedChains: [
+        { chainId: bitcoinChain },
+        { chainId: createChainId(sepoliaChainId) }
+      ],
       statusesByAccountId: {
         [bitcoinAccount.id.toString()]: 'vulnerable'
       },

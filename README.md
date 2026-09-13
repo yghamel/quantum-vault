@@ -1,34 +1,30 @@
-# Quantum Vault (iOS)
+# Quantum Vault (iOS / Capacitor)
 
-Capacitor iOS/iPad port of [Quantum Vault](https://github.com/p-11/quantum-vault) by [Project Eleven](https://projecteleven.com/), forked from release **v1.0.1**.
+Non-custodial **testnet** wallet UI forked from [p-11/quantum-vault@v1.0.1](https://github.com/p-11/quantum-vault/releases/tag/v1.0.1).
 
-First build: **Bitcoin testnet only**. Mainnet is disabled. `@project-eleven/libqc@1.0.0` remains the pinned SDK.
+**Networks:** Bitcoin Testnet + Ethereum Sepolia only. No Mainnet. No real-value funds.
 
-See `IOS_PORT_PLAN.md` for the Chrome-extension → Capacitor inventory.
+Pinned SDK: `@project-eleven/libqc@1.0.0`. Package manager: **pnpm only**.
 
-## Requirements
+See:
 
-- Node.js + **pnpm** only
-- Xcode (for simulator/device builds)
-- CocoaPods (via Capacitor iOS workflow)
+- `IOS_PORT_PLAN.md` — conversion inventory and blockers
+- `docs/ios-development.md` — Xcode / Capacitor setup
+- `docs/holding-duration-service-fee.md` — 2%/10% fee policy and collection blockers
+- `docs/threat-model-ios.md` — review boundaries
 
-## Setup
+Upstream reference implementations were audited; **this modified iOS application is not claimed audited or production-ready.**
+
+## Quick start
 
 ```sh
-cp .env.example .env   # set VITE_BITCOIN_API_URL (testnet), VITE_ASSET_PRICES_URL, VITE_REGISTER_URL
+cp .env.example .env
 pnpm install
 pnpm build:prod
-pnpm exec cap add ios   # first time only
-pnpm cap:sync
-pnpm cap:open           # opens Xcode
+pnpm exec cap sync ios
+pnpm exec cap open ios
 ```
 
-## Security notes
-
-- Vault durable state uses Keychain-backed `LibQCStorage` (not `localStorage`).
-- App background/inactive locks the vault via the same `clearWalletState` → `vault.lock()` path as idle timeout.
-- Never log passwords, mnemonics, keys, or encrypted wallet contents.
-
-## License
+## Licence
 
 [MIT](./LICENSE)

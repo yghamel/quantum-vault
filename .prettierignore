@@ -3,3 +3,9 @@ build
 build-hmr
 dist
 .claude/worktrees
+ios/App/Pods
+ios/App/App/public
+ios/DerivedData
+ios/App/App/capacitor.config.json
+ios/App/App/config.xml
+ios/App/App/Assets.xcassets
