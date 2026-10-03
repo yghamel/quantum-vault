@@ -19,7 +19,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ```sh
 git checkout ios-capacitor-port
 cp .env.example .env
-# Fill testnet-only URLs (Bitcoin Testnet API, Sepolia RPC, Sepolia bundler, prices, register)
+# Fill testnet-only URLs (Bitcoin Testnet API, Sepolia RPC, Sepolia bundler, prices)
 pnpm install
 pnpm build:prod
 pnpm exec cap sync ios
@@ -54,9 +54,7 @@ cd ios/App && pod install && cd ../..
 
 Runtime chains are **Bitcoin Testnet** and **Ethereum Sepolia** only. Mainnet is not configured.
 
-## Holding-duration service fee
-
-See `docs/holding-duration-service-fee.md`. Collection is **disabled** until libqc can atomically pay recipient + treasury.
+There is no developer service fee. Withdrawals pay only the Bitcoin miner fee or Ethereum gas fee.
 
 ## Security
 

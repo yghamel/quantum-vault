@@ -1,15 +1,19 @@
 import { XIcon } from 'lucide-react';
 import type { MouseEvent } from 'react';
 
+import { cn } from '@/lib/utils';
+
 type RecoveryPhraseChipProps = {
   number: number;
   word: string;
+  isInvalid?: boolean;
   onRemove: () => void;
 };
 
 export const RecoveryPhraseChip = ({
   number,
   word,
+  isInvalid = false,
   onRemove
 }: RecoveryPhraseChipProps) => {
   const handleRemoveClick = (event: MouseEvent<HTMLButtonElement>) => {
@@ -21,10 +25,19 @@ export const RecoveryPhraseChip = ({
 
   return (
     <div
-      className='inline-flex items-center gap-1 border border-border bg-background px-2 py-0.5'
+      className={cn(
+        'inline-flex items-center gap-1 border bg-background px-2 py-0.5',
+        isInvalid ? 'border-destructive text-destructive' : 'border-border'
+      )}
       data-testid='recovery-phrase-chip'
+      data-invalid={isInvalid || undefined}
     >
-      <span className='text-foreground text-xs font-medium leading-tight'>
+      <span
+        className={cn(
+          'text-xs font-medium leading-tight',
+          isInvalid ? 'text-destructive' : 'text-foreground'
+        )}
+      >
         {number}. {word}
       </span>
       <button

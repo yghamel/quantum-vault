@@ -44,19 +44,18 @@ import {
   resolveOwnedDestinationAccountId,
   resolveOwnedWithdrawalDestinationAccountId
 } from '@/providers/wallet-query-invalidation';
-import { CapacitorLibQCStorage } from '@/lib/capacitor-libqc-storage';
+import { libqcVaultStorage } from '@/lib/libqc-vault-storage';
 import {
   getBitcoinApiUrl,
   getEthereumBundlerApiKey,
   getEthereumBundlerRpcUrl,
-  getEthereumRpcUrl,
-  getRegisterUrl
+  getEthereumRpcUrl
 } from '@/lib/env';
 import {
   BITCOIN_TESTNET_CAIP,
   ETHEREUM_SEPOLIA_CAIP,
   ETHEREUM_SEPOLIA_CHAIN_ID
-} from '@/lib/holding-fee-policy';
+} from '@/lib/network-ids';
 import { assertNoNonInterfaceAssetBalances } from '@/lib/vault-operations';
 import {
   loadWalletSummary,
@@ -154,7 +153,6 @@ export type WithdrawVaultFundsResult = {
 
 type WithdrawReconcileSyncVisibility = 'visible' | 'silent';
 
-const storage = new CapacitorLibQCStorage();
 /** Bitcoin testnet CAIP-2 reference (libqc `BITCOIN_TESTNET_REF`). Mainnet disabled. */
 const bitcoinTestnetReference = BITCOIN_TESTNET_CAIP.split(':')[1]!;
 const emptyAccounts: Array<PersistedAccount> = [];
@@ -182,7 +180,11 @@ const toRpcUrl = (value: string): RpcUrl => value as RpcUrl;
  * Builds the chain spec list lazily so env getters are invoked at wallet boot
  * time inside an `attempt()` boundary, not at module-import time.
  *
- * Runtime networks: Bitcoin Testnet + Ethereum Sepolia only. No Mainnet.
+ * Runtime networks: Bitcoin Testnet4 + Ethereum Sepolia only. No Mainnet.
+ *
+ * Bitcoin reads and broadcasts go to testnet4 (where faucets pay out); the
+ * chain id keeps libqc's testnet reference because testnet4 shares testnet's
+ * address and signing parameters, so persisted accounts stay valid.
  */
 const buildChains = (): ChainSpecification[] => [
   {
@@ -191,7 +193,7 @@ const buildChains = (): ChainSpecification[] => [
       namespace: 'bip122',
       reference: bitcoinTestnetReference
     }),
-    name: 'Bitcoin Testnet' as ChainName,
+    name: 'Bitcoin Testnet4' as ChainName,
     network: 'bitcoin' as ChainNetwork,
     iconUrl:
       'https://assets.coingecko.com/coins/images/1/large/bitcoin.png' as IconUrl,
@@ -216,8 +218,9 @@ const buildChains = (): ChainSpecification[] => [
     nativeCurrency: {
       decimals: 18 as Decimals,
       name: 'Sepolia ETH' as AssetName,
-      // Distinct from Mainnet ETH ticker to avoid ambiguous UI labels.
-      symbol: 'SEPETH' as Symbol
+      // libqc resolves the native asset by symbol and only knows `ETH`;
+      // the chain name and asset name carry the Sepolia labelling.
+      symbol: 'ETH' as Symbol
     },
     testnet: true as Testnet,
     rpcUrls: [toRpcUrl(getEthereumRpcUrl())]
@@ -381,13 +384,9 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     const result = attempt(() => {
       const chains = buildChains();
       return new LibQC(
-        storage,
+        libqcVaultStorage,
         chains,
-        createBundlerConfigProvider(chains),
-        undefined,
-        {
-          registerUrl: getRegisterUrl()
-        }
+        createBundlerConfigProvider(chains)
       );
     });
     if ('error' in result) {

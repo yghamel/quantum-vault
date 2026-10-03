@@ -1,10 +1,11 @@
-import { Fragment, type ReactNode, useState } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { toast } from 'sonner';
 
 import { BackButton } from '@/components/ui/back-button';
 import { Button } from '@/components/ui/button';
 import { RecoveryPhraseWordGrid } from '@/components/shared/recovery-phrase-word-grid';
 import { RevealedRecoveryPhrasePage } from '@/components/shared/revealed-recovery-phrase-page';
+import { recoveryPhraseWordCount } from '@/components/shared/recovery-phrase-bytes';
 import { useBoolean } from '@/hooks/use-boolean';
 
 import { exportRecoveryPhraseCopy } from '../export-recovery-phrase-copy';
@@ -14,10 +15,10 @@ type RecoveryPhraseRevealStepProps = {
   onExit: () => void;
 };
 
-const wordsPerPage = 12;
-const recoveryPhraseWordCount = 24;
-const recoveryPhrasePageCount = recoveryPhraseWordCount / wordsPerPage;
-const hiddenPageWords = Array.from({ length: wordsPerPage }, () => '----');
+const hiddenWords = Array.from(
+  { length: recoveryPhraseWordCount },
+  () => '----'
+);
 
 type RecoveryPhraseAction = {
   id: string;
@@ -31,9 +32,6 @@ export const RecoveryPhraseRevealStep = ({
   const { recoveryPhrase, isSubmittingPassword } =
     useExportRecoveryPhraseContext();
   const [isRevealed, revealed] = useBoolean();
-  const [currentPage, setCurrentPage] = useState(0);
-  const startIndex = currentPage * wordsPerPage;
-  const isLastPage = currentPage === recoveryPhrasePageCount - 1;
 
   const handleConfirmWrittenDown = () => {
     if (recoveryPhrase === undefined) {
@@ -53,33 +51,10 @@ export const RecoveryPhraseRevealStep = ({
     revealed.set();
   };
 
-  const handleBack = () => {
-    if (currentPage > 0) {
-      setCurrentPage(previous => previous - 1);
-      return;
-    }
-
-    onExit();
-  };
-
   const phraseActions: ReadonlyArray<RecoveryPhraseAction> = [
     {
-      id: 'next-page',
-      isVisible: isRevealed && currentPage < recoveryPhrasePageCount - 1,
-      render: () => (
-        <Button
-          size='flow'
-          variant='secondary'
-          disabled={isSubmittingPassword}
-          onClick={() => setCurrentPage(previous => previous + 1)}
-        >
-          {exportRecoveryPhraseCopy.reveal.nextPageAction}
-        </Button>
-      )
-    },
-    {
       id: 'confirm-written',
-      isVisible: isRevealed && isLastPage,
+      isVisible: isRevealed,
       render: () => (
         <Button
           size='flow'
@@ -112,7 +87,7 @@ export const RecoveryPhraseRevealStep = ({
           size='flow'
           variant='secondary'
           disabled={isSubmittingPassword}
-          onClick={handleBack}
+          onClick={onExit}
         >
           {exportRecoveryPhraseCopy.reveal.exitAction}
         </Button>
@@ -124,7 +99,7 @@ export const RecoveryPhraseRevealStep = ({
     <div className='flex min-h-0 flex-1 flex-col'>
       <div className='min-h-0 flex-1 overflow-y-auto pb-4'>
         <BackButton
-          onClick={handleBack}
+          onClick={onExit}
           disabled={isSubmittingPassword}
           testId='export-recovery-phrase-back-button'
         />
@@ -142,22 +117,21 @@ export const RecoveryPhraseRevealStep = ({
         </div>
 
         {isRevealed && (
-          <div className='pt-6'>
-            <p className='pb-4 text-xs font-normal leading-none text-foreground'>
+          <div className='pt-4'>
+            <p className='pb-2 text-xs font-normal leading-none text-foreground'>
               {exportRecoveryPhraseCopy.reveal.phraseLabel}
             </p>
             <div data-testid='export-secret-phrase'>
               {recoveryPhrase === undefined ? (
                 <RecoveryPhraseWordGrid
-                  words={hiddenPageWords}
+                  words={hiddenWords}
                   isRevealed={false}
-                  startIndex={startIndex}
                 />
               ) : (
                 <RevealedRecoveryPhrasePage
                   mnemonic={recoveryPhrase}
-                  startIndex={startIndex}
-                  wordsPerPage={wordsPerPage}
+                  startIndex={0}
+                  wordsPerPage={recoveryPhraseWordCount}
                 />
               )}
             </div>

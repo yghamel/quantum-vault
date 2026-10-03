@@ -3,6 +3,7 @@ import { queryNamespace, type QuerySessionScope } from '@/lib/query-keys';
 
 const providerQueryKeyDomains = {
   boot: 'boot',
+  hasPassword: 'has-password',
   summary: 'summary'
 } as const;
 
@@ -15,6 +16,8 @@ type QuerySessionCurrencyModeScope = QuerySessionScope & {
 
 export const providerQueryKeys = {
   boot: () => [queryNamespace, providerQueryKeyDomains.boot] as const,
+  hasPassword: () =>
+    [queryNamespace, providerQueryKeyDomains.hasPassword] as const,
   summary: ({ sessionId, currency, mode }: QuerySessionCurrencyModeScope) =>
     [
       queryNamespace,

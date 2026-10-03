@@ -148,7 +148,7 @@ export const VaultDetailScreen = () => {
     );
 
   return (
-    <Screen className='h-(--popup-height) min-h-0 p-0'>
+    <Screen className='p-0'>
       <VaultDetailHeader
         selectedAddress={selectedAccount.address}
         title={vaultTitle}

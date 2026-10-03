@@ -85,8 +85,6 @@ on:
         required: false
       VITE_ASSET_PRICES_URL:
         required: false
-      VITE_REGISTER_URL:
-        required: false
 
 jobs:
   ci:
@@ -99,7 +97,6 @@ jobs:
       VITE_ETHEREUM_BUNDLER_API_KEY: ${{ secrets.VITE_ETHEREUM_BUNDLER_API_KEY }}
       VITE_BITCOIN_API_URL: ${{ secrets.VITE_BITCOIN_API_URL }}
       VITE_ASSET_PRICES_URL: ${{ secrets.VITE_ASSET_PRICES_URL }}
-      VITE_REGISTER_URL: ${{ secrets.VITE_REGISTER_URL }}
 
     steps:
       - name: Checkout code

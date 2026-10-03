@@ -319,6 +319,12 @@ const WithdrawnFundsState = ({
                 {destinationLabel}
               </span>
             </p>
+            <p
+              className='text-xs leading-4 text-warning'
+              data-testid='vault-detail-funds-burned-note'
+            >
+              {vaultSuccessCopy.burnedNote}
+            </p>
           </div>
         </div>
       </div>

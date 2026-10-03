@@ -8,7 +8,9 @@ const config: CapacitorConfig = {
     androidScheme: 'https'
   },
   ios: {
-    contentInset: 'automatic',
+    // CSS applies env(safe-area-inset-*); a native inset would double it and
+    // make the WKWebView scroll view scrollable.
+    contentInset: 'never',
     backgroundColor: '#09090b'
   }
 };

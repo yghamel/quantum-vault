@@ -1,14 +1,19 @@
 import type { RefObject } from 'react';
 import type { PasswordValidationResult } from '@project-eleven/libqc';
+import { Capacitor } from '@capacitor/core';
 import { useState } from 'react';
 
+import { PasswordRequirements } from '@/components/password-requirements';
 import { PasswordRevealToggle } from '@/components/shared/password-reveal-toggle';
 import { Field } from '@/components/ui/field';
 import { useBoolean } from '@/hooks/use-boolean';
 import {
   getDisplayedInlineError,
   getPasswordConfirmationErrorOnBlur,
-  getPasswordErrorOnBlur
+  getPasswordConfirmationErrorOnSubmit,
+  getPasswordErrorOnBlur,
+  getPasswordErrorOnSubmit,
+  type PasswordSubmitAttempt
 } from './password-form-validation';
 
 type PasswordFormProps = {
@@ -17,9 +22,14 @@ type PasswordFormProps = {
   onPasswordChange: (value: string) => void;
   onPasswordConfirmationChange: (value: string) => void;
   onSubmit?: () => void;
+  submitAttempt?: PasswordSubmitAttempt;
   passwordInputRef?: RefObject<HTMLInputElement | null>;
   passwordConfirmationInputRef?: RefObject<HTMLInputElement | null>;
 };
+
+// Focusing on mount raises the iOS keyboard before layout settles and shifts
+// the WKWebView document.
+const shouldAutoFocus = !Capacitor.isNativePlatform();
 
 /**
  * Password + confirm-password pair used by every new-password flow (wallet
@@ -33,6 +43,7 @@ export const PasswordForm = ({
   onPasswordChange,
   onPasswordConfirmationChange,
   onSubmit,
+  submitAttempt,
   passwordInputRef,
   passwordConfirmationInputRef
 }: PasswordFormProps) => {
@@ -84,19 +95,31 @@ export const PasswordForm = ({
     );
   };
 
-  const passwordError = getDisplayedInlineError({
-    isTouched: isPasswordTouched,
-    isFocused: isPasswordFocused,
-    hasValue: hasPasswordInput,
-    blurError: passwordErrorOnBlur
-  });
+  const passwordError = submitAttempt
+    ? getPasswordErrorOnSubmit({
+        hasPassword: submitAttempt.hasPassword,
+        failedRequirements: passwordValidation.failedRequirements
+      })
+    : getDisplayedInlineError({
+        isTouched: isPasswordTouched,
+        isFocused: isPasswordFocused,
+        hasValue: hasPasswordInput,
+        blurError: passwordErrorOnBlur
+      });
 
-  const confirmError = getDisplayedInlineError({
-    isTouched: isConfirmTouched,
-    isFocused: isConfirmFocused,
-    hasValue: hasPasswordConfirmationInput,
-    blurError: confirmErrorOnBlur
-  });
+  const confirmError = submitAttempt
+    ? getPasswordConfirmationErrorOnSubmit({
+        hasPasswordConfirmation: submitAttempt.hasPasswordConfirmation,
+        passwordsMatch
+      })
+    : getDisplayedInlineError({
+        isTouched: isConfirmTouched,
+        isFocused: isConfirmFocused,
+        hasValue: hasPasswordConfirmationInput,
+        blurError: confirmErrorOnBlur
+      });
+
+  const showRequirements = hasPasswordInput || submitAttempt !== undefined;
 
   return (
     <div className='flex flex-col gap-4'>
@@ -107,7 +130,7 @@ export const PasswordForm = ({
         onBlur={handlePasswordBlur}
         onFocus={() => setIsPasswordFocused(true)}
         placeholder='Create a password'
-        autoFocus
+        autoFocus={shouldAutoFocus}
         autoComplete='new-password'
         error={passwordError}
         inputRef={passwordInputRef}
@@ -118,6 +141,11 @@ export const PasswordForm = ({
           />
         }
       />
+      {showRequirements && (
+        <div data-testid='password-requirements'>
+          <PasswordRequirements result={passwordValidation} />
+        </div>
+      )}
       <Field
         label='Confirm Password'
         type={isConfirmRevealed ? 'text' : 'password'}

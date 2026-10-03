@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { expectedRecoveryPhraseWordCount, walletRecoverySteps } from './core';
+import { findInvalidWordPositions } from './recovery-word-check';
 import {
   backSlideAnimateOptions,
   forwardFadeAnimateOptions,
@@ -52,9 +53,6 @@ export const WalletRecoveryContent = () => {
     };
   }, [clearSensitiveState]);
 
-  const passwordValidation = walletRecovery.passwordValidation;
-  const passwordsMatch = walletRecovery.passwordsMatch;
-
   const handleNext = () => {
     setAnimateScreenOptions(forwardSlideAnimateOptions);
     toNextStep();
@@ -70,6 +68,12 @@ export const WalletRecoveryContent = () => {
       return;
     }
 
+    const invalidWordPositions = findInvalidWordPositions(phraseWords);
+    if (invalidWordPositions.length > 0) {
+      toast.error(toastMessages.unknownRecoveryWords(invalidWordPositions));
+      return;
+    }
+
     // libqc validation errors may reference user-entered words. Never forward
     // the raw error message - always use a generic toast to avoid echoing any
     // part of the mnemonic back to the UI or logs.
@@ -77,7 +81,7 @@ export const WalletRecoveryContent = () => {
     const result = attempt(() => LibQC.validateMnemonic(mnemonicBytes));
     mnemonicBytes.fill(0);
     if ('error' in result) {
-      toast.error(toastMessages.invalidSecretPhrase);
+      toast.error(toastMessages.recoveryPhraseChecksumMismatch);
       return;
     }
 
@@ -88,7 +92,7 @@ export const WalletRecoveryContent = () => {
     if (walletRecovery.isRecovering) {
       return;
     }
-    if (!passwordValidation.valid || !passwordsMatch) {
+    if (!walletRecovery.isPasswordReady()) {
       return;
     }
 
@@ -135,7 +139,7 @@ export const WalletRecoveryContent = () => {
   return (
     <>
       <Screen className='sharp'>
-        <div className='flex flex-1 flex-col overflow-hidden'>
+        <div className='flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto'>
           <AnimatePresence
             mode='wait'
             custom={animateScreenOptions}
@@ -144,7 +148,7 @@ export const WalletRecoveryContent = () => {
             <AnimateScreen
               key={currentStep}
               custom={animateScreenOptions}
-              className='flex flex-1 flex-col'
+              className='flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden'
             >
               {walletRecovery.isRecovering ? (
                 <CreatingWalletLoader message={recoveryLoaderMessage} />

@@ -1,7 +1,7 @@
 import type { PersistedAccount } from '@project-eleven/libqc';
 import { cn } from '@/lib/utils';
 import { useCurrency } from '@/hooks/use-currency';
-import { formatVaultNumberForDisplay } from '@/lib/copy';
+import { formatVaultNumberForDisplay, vaultCardCopy } from '@/lib/copy';
 import type { VaultStatus } from '../core';
 import type { VaultLifecycleKind } from '../lifecycle/core';
 import type { AccountChainMetadata, VaultSnapshot } from '../types';
@@ -107,6 +107,14 @@ export const VaultCard = ({
             )}
           >
             {shortenVaultAddress(account.address)}
+            {status === 'withdrawn' ? (
+              <span
+                data-testid='vault-card-burned-tag'
+                className='ml-2 bg-secondary px-1.5 py-0.5 type-caption font-medium uppercase tracking-wide text-foreground'
+              >
+                {vaultCardCopy.burnedTag}
+              </span>
+            ) : null}
           </p>
         </div>
       </div>

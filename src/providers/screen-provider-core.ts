@@ -3,6 +3,21 @@ import type { ScreenKey } from '@/screens';
 
 import type { WalletHydrationState } from './wallet-queries';
 
+/** Only an existing password makes the lock screen a usable destination. */
+export const resolveScreenAfterSessionEnd = ({
+  hasPassword,
+  isOnboardingSeen
+}: {
+  hasPassword: boolean;
+  isOnboardingSeen: boolean;
+}): ScreenKey => {
+  if (hasPassword) {
+    return 'lock';
+  }
+
+  return isOnboardingSeen ? 'initial' : 'onboarding';
+};
+
 export const resolveHydrationScreen = ({
   hydrationState,
   isOnboardingSeen
@@ -14,8 +29,10 @@ export const resolveHydrationScreen = ({
     return isOnboardingSeen ? 'initial' : 'onboarding';
   }
 
+  // Launch offers Log In alongside Create / Recover instead of jumping
+  // straight to the password prompt.
   if (hydrationState.kind === 'locked') {
-    return 'lock';
+    return 'initial';
   }
 
   return match(hydrationState.initWalletResult, {

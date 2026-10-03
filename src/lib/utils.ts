@@ -128,9 +128,12 @@ const fetchAssetPrices = withInFlightCoalescer(
     currencyCode
   }: FetchAssetPricesInput): Promise<CoinGeckoPriceResponse> => {
     const canonicalIds = toCanonicalCoinGeckoIds(coingeckoIds);
-    const response = await fetch(
-      `${getAssetPricesUrl()}?ids=${canonicalIds.join(',')}&vs=${currencyCode}`
-    );
+    const url = new URL(getAssetPricesUrl());
+    url.searchParams.set('ids', canonicalIds.join(','));
+    url.searchParams.set('vs', currencyCode);
+    // CoinGecko's /simple/price names the currency parameter `vs_currencies`.
+    url.searchParams.set('vs_currencies', currencyCode);
+    const response = await fetch(url.toString());
     if (!response.ok) {
       throw new Error(
         `Failed to fetch asset prices: ${response.status} ${response.statusText}`

@@ -27,9 +27,6 @@ const requireEnv = (key: string, value: string | undefined): string => {
   );
 };
 
-export const getRegisterUrl = (): string =>
-  requireEnv('VITE_REGISTER_URL', import.meta.env.VITE_REGISTER_URL);
-
 export const getEthereumRpcUrl = (): string =>
   requireEnv('VITE_ETHEREUM_RPC_URL', import.meta.env.VITE_ETHEREUM_RPC_URL);
 

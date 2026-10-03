@@ -1,11 +1,18 @@
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  BITCOIN_TESTNET_CAIP,
-  ETHEREUM_SEPOLIA_CAIP
-} from '../holding-fee-policy';
+import { withdrawFlowCopy } from '../copy';
+import { BITCOIN_TESTNET_CAIP, ETHEREUM_SEPOLIA_CAIP } from '../network-ids';
 import { defaultAccountChainIds } from '@/providers/default-accounts';
+
+const removedServiceFeePaths = [
+  'src/lib/holding-duration-fee.ts',
+  'src/lib/holding-fee-policy.ts',
+  'src/lib/fee-policy-acceptance.ts',
+  'src/lib/withdrawal-fee-quote.ts',
+  'src/components/shared/fee-disclosure-panel.tsx',
+  'src/components/settings/settings-fee-schedule-screen.tsx'
+] as const;
 
 describe('network safety + libqc pin', () => {
   it('keeps @project-eleven/libqc pinned to 1.0.0', () => {
@@ -31,6 +38,17 @@ describe('network safety + libqc pin', () => {
 
   it('labels Sepolia CAIP as eip155:11155111', () => {
     expect(ETHEREUM_SEPOLIA_CAIP).toBe('eip155:11155111');
+  });
+
+  it('does not ship a developer service fee', () => {
+    for (const path of removedServiceFeePaths) {
+      expect(existsSync(path)).toBe(false);
+    }
+    expect(readFileSync('.env.example', 'utf8')).not.toMatch(/TREASURY/);
+    expect(withdrawFlowCopy.reviewBitcoinMinerFeeLabel).toBe(
+      'Bitcoin miner fee'
+    );
+    expect(withdrawFlowCopy.reviewEthereumGasFeeLabel).toBe('Ethereum gas fee');
   });
 
   it('does not silently fall back CapacitorLibQCStorage to localStorage on web/tests', async () => {

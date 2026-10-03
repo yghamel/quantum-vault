@@ -8,6 +8,7 @@ import type {
 import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 import { RecoveryPhraseChip } from './recovery-phrase-chip';
+import { isRecoveryWord } from './recovery-word-check';
 
 export type RecoveryPhraseInputHandle = {
   commitPendingWord: () => string | null;
@@ -168,6 +169,7 @@ export const RecoveryPhraseInput = ({
             key={`${displayNumber}-${word}`}
             number={displayNumber}
             word={word}
+            isInvalid={!isRecoveryWord(word)}
             onRemove={() => onRemoveWordAt(index)}
           />
         );
@@ -189,7 +191,7 @@ export const RecoveryPhraseInput = ({
           spellCheck={false}
           aria-label='Enter recovery phrase word'
           data-testid='recovery-phrase-word-input'
-          className='text-foreground placeholder:text-muted-foreground flex min-w-[80px] flex-1 bg-transparent text-sm leading-tight outline-none'
+          className='text-foreground placeholder:text-muted-foreground flex min-w-[80px] flex-1 bg-transparent text-base leading-tight outline-none'
         />
       )}
     </div>

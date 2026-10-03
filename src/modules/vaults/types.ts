@@ -24,7 +24,8 @@ export type AccountChainMetadata = {
 };
 
 /**
- * Alert tone shared between danger (red) and warning (amber) banner variants.
- * Matches the two rendered states of the Figma `Alert` component (38:4737).
+ * Alert tone shared between danger (red), warning (amber), and success
+ * (green) banner variants. Danger and warning match the Figma `Alert`
+ * component (38:4737); success marks a quantum-protected vault.
  */
-export type AlertTone = 'danger' | 'warning';
+export type AlertTone = 'danger' | 'warning' | 'success';

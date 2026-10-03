@@ -6,13 +6,11 @@
 - Keychain-backed opaque vault storage
 - Session lock / privacy cover
 - Bitcoin Testnet + Sepolia configuration
-- Holding-fee **math**, disclosure, and gates (collection off)
 
 ## Out of scope / blocked
 
 - Mainnet / real-value networks
 - Modifying libqc cryptography or `emptyVault`
-- Atomic service-fee settlement (awaiting SDK capability)
 - Biometric unlock
 - Analytics / tracking
 
@@ -25,5 +23,4 @@
 ## App Store / legal blockers (non-exhaustive)
 
 - Final privacy nutrition labels must be confirmed with counsel
-- Fee disclosure / consumer-finance rules may apply even on testnet demos in some jurisdictions
 - Independent security review required before any production or Mainnet discussion

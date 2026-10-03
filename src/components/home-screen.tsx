@@ -33,6 +33,8 @@ import { useManualBalanceRefresh } from '@/modules/vaults/shared/use-manual-bala
 import { vaultCardHeightClassName } from '@/modules/vaults/shared/vault-card';
 import { VaultSection } from '@/modules/vaults/shared/vault-section';
 import { Screen } from './screen';
+import { HelpButton } from './shared/help-button';
+import { BackButton } from './ui/back-button';
 import { Button } from './ui/button';
 import { CenterAbsolutely } from './ui/center-absolutely';
 import { Skeleton } from './ui/skeleton';
@@ -85,6 +87,7 @@ export const HomeScreen = () => {
     vault,
     withdrawSyncState,
     clearWithdrawSyncState,
+    clearWalletState,
     latestWithdrawalRecordByAccountId
   } = useWallet();
   const withdrawalReconciliationState = withdrawSyncState.status;
@@ -165,13 +168,24 @@ export const HomeScreen = () => {
     navigate('vault-detail');
   };
 
+  const handleBackClick = () => {
+    clearWalletState();
+    navigate('initial', { direction: 'back', type: 'fade' });
+  };
+
   return (
-    <Screen className='max-h-(--popup-height) overflow-y-auto px-4 pb-4 pt-8'>
+    <Screen className='px-4 pb-4 pt-4'>
       <div className='-mx-4 flex h-10 items-center justify-between border-b border-popover px-4'>
-        <div className='flex h-10 items-center justify-between'>
+        <div className='flex h-10 items-center gap-3'>
+          <BackButton
+            label={homeCopy.backAria}
+            testId='home-back-button'
+            onClick={handleBackClick}
+          />
           <h1 className='type-title-bar m-0'>{homeCopy.title}</h1>
         </div>
         <div className='flex items-center gap-1'>
+          <HelpButton />
           <BalanceRefreshButton
             ariaLabel={homeCopy.refreshBalancesAria}
             isRefreshing={isRefreshingBalances}

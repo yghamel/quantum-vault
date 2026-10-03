@@ -707,7 +707,7 @@ describe('vault detail core', () => {
     it('resolves EVM tx references to Etherscan metadata', () => {
       expect(getTxExplorerMetadataFromRef(evmTxRef)).toEqual({
         name: 'Etherscan',
-        url: `https://etherscan.io/tx/${evmTxRef}`
+        url: `https://sepolia.etherscan.io/tx/${evmTxRef}`
       });
     });
 
@@ -716,7 +716,7 @@ describe('vault detail core', () => {
         '0x95d0c0a9f7eb489ccb6d2e2d8af17a58fa2df04af745cc34eddf566f5f04789a';
       const result = getTxUrlFromRef(txRef);
 
-      expect(result).toBe(`https://etherscan.io/tx/${txRef}`);
+      expect(result).toBe(`https://sepolia.etherscan.io/tx/${txRef}`);
     });
 
     it('resolves BTC tx references to mempool links', () => {
@@ -724,10 +724,10 @@ describe('vault detail core', () => {
         '95d0c0a9f7eb489ccb6d2e2d8af17a58fa2df04af745cc34eddf566f5f04789a';
       const result = getTxUrlFromRef(txRef);
 
-      expect(result).toBe(`https://mempool.space/tx/${txRef}`);
+      expect(result).toBe(`https://mempool.space/testnet4/tx/${txRef}`);
       expect(getTxExplorerMetadataFromRef(txRef)).toEqual({
         name: 'mempool.space',
-        url: `https://mempool.space/tx/${txRef}`
+        url: `https://mempool.space/testnet4/tx/${txRef}`
       });
     });
 

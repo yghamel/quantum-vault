@@ -33,6 +33,8 @@ ios/DerivedData
 *.sw?
 
 *.env
+.env.*
+!.env.example
 
 playwright-report
 blob-report

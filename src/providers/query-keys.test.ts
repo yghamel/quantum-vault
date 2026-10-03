@@ -9,6 +9,9 @@ describe('providerQueryKeys', () => {
 
   it('returns stable key values for repeated calls with identical input', () => {
     expect(providerQueryKeys.boot()).toEqual(providerQueryKeys.boot());
+    expect(providerQueryKeys.hasPassword()).toEqual(
+      providerQueryKeys.hasPassword()
+    );
     expect(providerQueryKeys.summary(baseScope)).toEqual(
       providerQueryKeys.summary(baseScope)
     );

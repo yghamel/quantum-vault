@@ -20,6 +20,7 @@ import {
 import type { VaultLifecycleAccount } from '@/modules/vaults/lifecycle/account-read-model';
 import { useVaultLifecycleAccounts } from '@/modules/vaults/lifecycle/use-vault-lifecycle-accounts';
 import { shortenVaultAddress } from '@/modules/vaults/shared/address';
+import { AlertBanner } from '@/modules/vaults/shared/alert-banner';
 import { WarningCircleIcon } from '@/modules/vaults/shared/icons';
 import { resolveAssetIconUrl } from '@/modules/vaults/shared/asset-icon';
 import { StatusBadge } from '@/modules/vaults/shared/status-badge';
@@ -123,6 +124,7 @@ type ReviewStepProps = {
   chainName: string;
   confirmLabel: string;
   destinationAddress: string;
+  isBitcoin: boolean;
   reviewSource: ReviewSource;
   suggestedVaultLabel: string | null;
   summaryState: SummaryState;
@@ -135,6 +137,7 @@ const ReviewStep = ({
   chainName,
   confirmLabel,
   destinationAddress,
+  isBitcoin,
   reviewSource,
   suggestedVaultLabel,
   summaryState,
@@ -188,7 +191,11 @@ const ReviewStep = ({
         </div>
 
         <div className='mt-4 flex items-center justify-between'>
-          <p className='type-footnote m-0'>{withdrawFlowCopy.reviewFeeLabel}</p>
+          <p className='type-footnote m-0'>
+            {isBitcoin
+              ? withdrawFlowCopy.reviewBitcoinMinerFeeLabel
+              : withdrawFlowCopy.reviewEthereumGasFeeLabel}
+          </p>
           {summaryState.status === 'loading' ? (
             <Skeleton className='h-4 w-24' />
           ) : (
@@ -198,20 +205,19 @@ const ReviewStep = ({
           )}
         </div>
 
-        <div className='mt-3 space-y-2 border border-popover px-4 py-3'>
-          <div className='flex items-center justify-between gap-2'>
-            <p className='type-footnote m-0'>
-              {withdrawFlowCopy.reviewServiceFeeLabel}
-            </p>
-            <p className='type-footnote m-0'>0 (collection disabled)</p>
-          </div>
-          <p className='type-footnote m-0 text-muted-foreground'>
-            {withdrawFlowCopy.reviewServiceFeeDisabled}
-          </p>
-          <p className='type-footnote m-0 text-muted-foreground'>
-            {withdrawFlowCopy.reviewTestnetWarning}
-          </p>
-        </div>
+        <AlertBanner
+          data-testid='withdraw-burn-notice'
+          tone='warning'
+          title={withdrawFlowCopy.burnNoticeTitle}
+          lines={[
+            { id: 'burn-notice-body', text: withdrawFlowCopy.burnNoticeBody }
+          ]}
+          className='mt-4 border-x'
+        />
+
+        <p className='type-footnote m-0 mt-3 text-muted-foreground'>
+          {withdrawFlowCopy.reviewTestnetWarning}
+        </p>
       </div>
 
       <div className='flex flex-col gap-3'>
@@ -961,6 +967,7 @@ export const VaultWithdrawScreen = () => {
                     chainName={selectedChain.name}
                     confirmLabel={confirmLabel}
                     destinationAddress={trimmedDestinationAddress}
+                    isBitcoin={isBitcoin}
                     reviewSource={reviewSource}
                     suggestedVaultLabel={
                       suggestedSafeDestination?.vaultLabel ?? null

@@ -1,11 +1,9 @@
-import { FeeDisclosurePanel } from '@/components/shared/fee-disclosure-panel';
 import { useCurrency } from '@/hooks/use-currency';
 import { useScreen } from '@/hooks/use-screen';
 import { useWallet } from '@/hooks/use-wallet';
 import { ensurePresent } from '@/lib/assert';
 import { depositFlowCopy } from '@/lib/copy';
 import { toastMessages } from '@/lib/content';
-import { hasAcceptedFeePolicy } from '@/lib/fee-policy-acceptance';
 import { splitAddressForDepositWrap } from '@/lib/format';
 import { match } from '@/lib/match';
 import { cn, shortenAddress } from '@/lib/utils';
@@ -266,9 +264,6 @@ export const ReceiveScreen = () => {
   const [selectedChainId, setSelectedChainId] = useState<string | null>(null);
   const [selectedPickerAccount, setSelectedPickerAccount] =
     useState<PersistedAccount | null>(null);
-  const [feePolicyAckVersion, setFeePolicyAckVersion] = useState(0);
-  const hasFeeAck = hasAcceptedFeePolicy() || feePolicyAckVersion > 0;
-
   const copyAddressToClipboard = (account: PersistedAccount) => {
     navigator.clipboard.writeText(account.address);
 
@@ -433,35 +428,6 @@ export const ReceiveScreen = () => {
     ? splitAddressForDepositWrap({ address: accountToDisplay.address })
     : null;
 
-  if (!hasFeeAck) {
-    return (
-      <Screen>
-        <div className='flex flex-1 min-h-0 flex-col justify-between'>
-          <div>
-            <BackButton onClick={handleBack} />
-            <div className='mt-3 flex flex-col gap-3'>
-              <h1 className='type-heading-lg m-0' data-testid='receive-screen'>
-                Before you deposit
-              </h1>
-              <p className='type-body m-0 text-muted-foreground'>
-                Review the holding-duration service fee policy before viewing a
-                deposit address for {chainDisplayName}.
-              </p>
-            </div>
-            <div className='mt-6'>
-              <FeeDisclosurePanel
-                requireAcknowledge
-                onAcknowledged={() =>
-                  setFeePolicyAckVersion(version => version + 1)
-                }
-              />
-            </div>
-          </div>
-        </div>
-      </Screen>
-    );
-  }
-
   return (
     <Screen>
       <div className='flex flex-1 min-h-0 flex-col justify-between'>
@@ -475,10 +441,6 @@ export const ReceiveScreen = () => {
             <p className='type-body m-0 max-w-[296px] text-warning'>
               {depositFlowCopy.warningSubtitle(chainSymbol, tokenFamily)}
             </p>
-          </div>
-
-          <div className='mt-4'>
-            <FeeDisclosurePanel compact />
           </div>
 
           <div className='mt-8 flex justify-center'>
@@ -561,6 +523,13 @@ export const ReceiveScreen = () => {
               </Button>
             </div>
           </div>
+
+          <p
+            data-testid='receive-protection-note'
+            className='type-footnote m-0 mt-4 text-success'
+          >
+            {depositFlowCopy.protectionNote}
+          </p>
         </div>
 
         <Button

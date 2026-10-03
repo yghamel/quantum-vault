@@ -10,8 +10,9 @@ type UseAppLifecycleLockInput = {
  * Locks the vault when the iOS app leaves the foreground.
  *
  * Extension popups wiped RAM on close; Capacitor apps stay resident, so
- * background/inactive must call the same lock path as idle timeout
- * (`clearWalletState` → `vault.lock()` → navigate to lock).
+ * background/inactive must call the same session-end path as idle timeout
+ * (`clearWalletState` → `vault.lock()` → lock screen, or onboarding / initial
+ * when no password exists yet).
  */
 export const useAppLifecycleLock = ({ onLock }: UseAppLifecycleLockInput) => {
   const onLockRef = useRef(onLock);

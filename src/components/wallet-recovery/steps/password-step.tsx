@@ -20,8 +20,8 @@ export const PasswordStep = ({
   const {
     passwordValidation,
     passwordsMatch,
-    canSubmitPassword,
     isRecovering,
+    isPasswordReady,
     setPassword,
     setPasswordConfirmation
   } = useWalletRecoveryContext();
@@ -30,8 +30,8 @@ export const PasswordStep = ({
     <SharedPasswordStep
       passwordsMatch={passwordsMatch}
       passwordValidation={passwordValidation}
-      canSubmit={canSubmitPassword}
       isSubmitting={isRecovering}
+      isPasswordReady={isPasswordReady}
       onPasswordChange={setPassword}
       onPasswordConfirmationChange={setPasswordConfirmation}
       onSubmit={onSubmit}

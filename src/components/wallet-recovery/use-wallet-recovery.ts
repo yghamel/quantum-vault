@@ -1,5 +1,8 @@
 import { useWallet } from '@/hooks/use-wallet';
-import { toValidatedNewPasswordBytes } from '@/lib/password';
+import {
+  isNewPasswordReady,
+  toValidatedNewPasswordBytes
+} from '@/lib/password';
 import { withZeroed } from '@/lib/secrets-zeroing';
 import { runSingleFlight } from '@/lib/single-flight';
 import { areEqualBytes, clearSecretRef, replaceSecretRef } from '@/lib/utils';
@@ -35,8 +38,6 @@ export const useWalletRecovery = () => {
   // Recovery is a local wallet mutation (not server query state). We gate it
   // with single-flight to prevent duplicate non-idempotent imports.
   const recoverInFlightRef = useRef<Promise<boolean> | null>(null);
-
-  const canSubmitPassword = passwordValidation.valid && passwordsMatch;
 
   const hasFullPhrase = wordCount === expectedRecoveryPhraseWordCount;
   const syncPasswordValidationState = useCallback(() => {
@@ -88,6 +89,12 @@ export const useWalletRecovery = () => {
     [syncMnemonicPhrase]
   );
 
+  const isPasswordReady = useCallback(
+    () =>
+      isNewPasswordReady(passwordRef.current, passwordConfirmationRef.current),
+    []
+  );
+
   const setPassword = useCallback(
     (password: string) => {
       replaceSecretRef(passwordRef, textEncoder.encode(password));
@@ -124,7 +131,7 @@ export const useWalletRecovery = () => {
   }, [clearSensitiveState]);
 
   const recover = async (): Promise<boolean> => {
-    if (!canSubmitPassword || !hasFullPhrase) {
+    if (!hasFullPhrase || !isPasswordReady()) {
       return false;
     }
 
@@ -170,7 +177,7 @@ export const useWalletRecovery = () => {
     wordCount,
     passwordValidation,
     passwordsMatch,
-    canSubmitPassword,
+    isPasswordReady,
     isRecovering,
     setWords,
     setPassword,

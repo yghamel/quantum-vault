@@ -15,11 +15,11 @@ Development-quality, non-custodial iOS wallet for **exactly**:
 
 Mainnet Bitcoin, Ethereum mainnet (`eip155:1`), Base, and all other real-value networks are **forbidden** in runtime configuration.
 
-Holding-duration **application-level service fee** (testnet policy): 2% simple annual (200 bps), 10% lifetime cap (1000 bps), non-compounding, second-prorated, per confirmed deposit lot, zero grace, zero minimum. Fees stay **disabled** until valid testnet treasuries are configured **and** libqc can atomically pay recipient + treasury. Documented blockers below.
+**No developer service fee.** Withdrawals pay only the network fee: the Bitcoin miner fee or the Ethereum gas fee.
 
-**Non-custodial wording:** use “held in vault” / “time held in vault”. Never claim trust, custody, guaranteed unspendability, or consensus timelock for the app fee.
+**Non-custodial wording:** use “held in vault” / “time held in vault”. Never claim trust, custody, or guaranteed unspendability.
 
-**Licence:** preserve MIT + upstream attribution. Upstream repos were audited as *reference implementations*; this modified iOS app and fee flows need their own security and legal review. Do not claim this app is audited or safe for real funds.
+**Licence:** preserve MIT + upstream attribution. Upstream repos were audited as *reference implementations*; this modified iOS app needs its own security and legal review. Do not claim this app is audited or safe for real funds.
 
 **Removed / obsolete:** any MNTD firmware URL, RAK, Helium, or unrelated hardware references from earlier drafts. They are not part of this product.
 
@@ -48,15 +48,17 @@ Holding-duration **application-level service fee** (testnet policy): 2% simple a
 | `vault_*` (via `LibQCStorage`) | Critical (opaque ciphertext from libqc) | iOS Keychain only on native; in-memory for unit/web preview — **never** silent `localStorage` fallback on iOS |
 | `quantum-vault-currency` | Low | Preferences / WKWebView `localStorage` OK |
 | `quantum-vault-onboarding-seen` | Low | Same |
-| Fee policy acceptance version | Low / compliance | Preferences (separate from vault prefix) |
+| `quantum-vault-native-install-marker` | Low | Same; marks that this install has reconciled the Keychain |
 
 Keychain intent: device-only, non-syncing, unlocked-device access (`WhenUnlockedThisDeviceOnly` equivalent). Reinstall may retain Keychain items on iOS — wallet deletion must clear `vault_*`; recovery phrase remains the recovery path.
+
+Fresh install: WKWebView `localStorage` is removed with the app but Keychain items are not. On native boot, if neither the install marker nor the onboarding flag exists, orphaned `vault_*` items are cleared before hydration so a reinstall starts at onboarding / Create or Recover (`src/lib/native-vault-install-reconcile.ts`).
 
 ---
 
 ## 3. Lifecycle lock + privacy
 
-Authoritative path: `clearWalletState()` → `vault.lock()` → navigate `lock`.
+Authoritative path: `clearWalletState()` → `vault.lock()` → navigate `lock` when a password exists, otherwise onboarding / initial (`resolveScreenAfterSessionEnd`).
 
 | Event | Action |
 | --- | --- |
@@ -64,7 +66,7 @@ Authoritative path: `clearWalletState()` → `vault.lock()` → navigate `lock`.
 | Foreground after lock | Password required (no auto-unlock, no biometrics in v1) |
 | 10 min foreground idle | Existing session timeout |
 | App-switcher snapshot | Privacy cover hides balances/addresses/recovery/tx details |
-| Unexpected WebView reload | Hydration routes locked vault to lock screen |
+| Cold launch / unexpected WebView reload | Hydration routes a locked vault to the start screen: Log In (password), Create (replaces the vault after confirmation), or Recover |
 
 No competing lock paths. No secret material in lock logs.
 
@@ -95,45 +97,13 @@ LibQC accepts arbitrary `ChainSpecification` + `BundlerConfigProvider`. Kernel u
 
 ---
 
-## 5. Holding-duration service fee
-
-### Exact testnet policy
-
-```
-eligibleHoldingSeconds = max(0, calculationTime - confirmedDepositTime)
-uncappedFee = floor(principal × 200 × eligibleHoldingSeconds / 10_000 / 31_536_000)
-maximumFee = floor(principal × 1_000 / 10_000)
-finalServiceFee = min(uncappedFee, maximumFee)
-```
-
-- BTC principal/fee: satoshis (`bigint`)
-- ETH principal/fee: wei (`bigint`)
-- Simple, non-compounding; round down; 5 years → 10% cap; longer → still 10%
-- Authoritative time from chain/block data — not `Date.now()` for accrual math inputs (callers pass chain-derived times)
-
-### Collection blockers (libqc 1.0.0 public API)
-
-| Network | Required | Public API reality | Decision |
-| --- | --- | --- | --- |
-| Bitcoin | One signed tx with recipient + treasury (+ change) | `BitcoinAccountClient.emptyVault(destination)` / `buildSweepTransaction` sweeps **all UTXOs to a single output** | **Fee collection disabled.** Quote/disclosure/math may still run in dry-run UI when treasuries configured, but signing path must not invent multi-output txs outside libqc. |
-| Ethereum | Atomic UserOp: recipient transfer + treasury fee | `emptyVault` / `sendTransfer` send to **one** destination; `sendKernelUserOperation` takes a **single** `UserOperationCall` | **Fee collection disabled** until a published batched call API exists. |
-
-Do not modify libqc, Kernel, scripts, or signing to force monetization. Users retain recovery material; the fee is application-level and bypassable via external recovery software.
-
-### Deposit-age accounting (still implement where safe)
-
-- **Bitcoin:** treat each confirmed UTXO as a lot; reconstruct from testnet API; unconfirmed = no accrual. Full-sweep fee math can be computed for quotes even while collection is disabled.
-- **Ethereum:** FIFO native Sepolia ETH lots require a history indexer; plain JSON-RPC is insufficient after reinstall/recovery. If indexer absent → do not claim recovery-safe ETH fee accounting; keep collection disabled.
-
----
-
-## 6. Security freeze
+## 5. Security freeze
 
 Do not modify: mnemonic generation/validation, BIP-85, key derivation, passwords, private keys, encryption, address generation, signing, exposure detection, recovery semantics, `emptyVault` cryptography. Never log secrets. No analytics/tracking SDKs.
 
 ---
 
-## 7. Capacitor / Xcode
+## 6. Capacitor / Xcode
 
 - Capacitor **7.4.4** (pinned; matches Node 24 + existing port; Xcode 26.3)
 - `webDir: dist`, appId `com.projecteleven.quantumvault` (provisional until distribution)
@@ -142,12 +112,11 @@ Do not modify: mnemonic generation/validation, BIP-85, key derivation, passwords
 
 ---
 
-## 8. Verification checklist
+## 7. Verification checklist
 
 - [x] libqc remains `1.0.0`
 - [x] Runtime chains: BTC testnet + Sepolia only
-- [x] Fee collection gated off until atomic path exists
-- [x] Fee math unit tests for 0 / 30d / 6m / 1y / 3y / 5y / >5y
+- [x] No developer service fee; withdrawals show only miner / gas fees
 - [x] Background lock + privacy cover
 - [x] Keychain vault storage (no localStorage fallback on native)
 - [x] Simulator compile under Xcode 26.3 (`BUILD SUCCEEDED`, iPhone 17 / iOS 26.3.1)

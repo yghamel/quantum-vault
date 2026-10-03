@@ -444,14 +444,14 @@ export const getTxExplorerMetadataFromRef = (
   if (isEvmTxRef(txRef)) {
     return {
       name: 'Etherscan',
-      url: `https://etherscan.io/tx/${txRef}`
+      url: `https://sepolia.etherscan.io/tx/${txRef}`
     };
   }
 
   if (isBitcoinTxRef(txRef)) {
     return {
       name: 'mempool.space',
-      url: `https://mempool.space/tx/${txRef}`
+      url: `https://mempool.space/testnet4/tx/${txRef}`
     };
   }
 

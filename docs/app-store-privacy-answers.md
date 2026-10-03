@@ -6,7 +6,7 @@ Collected data types: **None** intended for this testnet build (no analytics/ads
 
 Accessed API types:
 
-- UserDefaults / preferences (CA92.1) — currency, onboarding, fee-policy acceptance version
+- UserDefaults / preferences (CA92.1) — currency, onboarding, fresh-install marker
 
 Keychain:
 

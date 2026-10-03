@@ -82,7 +82,7 @@ describe('VaultDetailActivityPanel', () => {
     });
 
     expect(html).toContain('<a');
-    expect(html).toContain(`href="https://mempool.space/tx/${txRef}"`);
+    expect(html).toContain(`href="https://mempool.space/testnet4/tx/${txRef}"`);
     expect(html).toContain('target="_blank"');
     expect(html).toContain('rel="noopener noreferrer"');
     expect(html).toContain(
@@ -101,7 +101,7 @@ describe('VaultDetailActivityPanel', () => {
     });
 
     expect(html).toContain('<a');
-    expect(html).toContain(`href="https://etherscan.io/tx/${txRef}"`);
+    expect(html).toContain(`href="https://sepolia.etherscan.io/tx/${txRef}"`);
     expect(html).toContain('target="_blank"');
     expect(html).toContain('rel="noopener noreferrer"');
     expect(html).toContain('aria-label="View ETH transaction on Etherscan"');

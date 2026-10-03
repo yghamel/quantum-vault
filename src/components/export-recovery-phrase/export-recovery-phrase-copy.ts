@@ -5,7 +5,6 @@ export const exportRecoveryPhraseCopy = {
       'Your recovery phrase and private keys give full access to your wallet. Make sure no one is watching your screen.',
     warning: 'Never share it with anyone. Clipboard copy is disabled.',
     phraseLabel: 'Recovery Phrase',
-    nextPageAction: 'NEXT',
     revealAction: 'REVEAL KEYS',
     copyAction: 'I WROTE IT DOWN',
     exitAction: 'BACK'

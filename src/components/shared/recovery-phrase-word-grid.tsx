@@ -13,7 +13,7 @@ export const RecoveryPhraseWordGrid = ({
 }: RecoveryPhraseWordGridProps) => (
   <div
     className={cn(
-      'grid grid-cols-3 gap-2 transition-[filter] duration-200',
+      'grid grid-cols-3 gap-1.5 transition-[filter] duration-200',
       !isRevealed && 'blur'
     )}
     aria-hidden={!isRevealed}
@@ -21,9 +21,12 @@ export const RecoveryPhraseWordGrid = ({
     {words.map((word, index) => (
       <div
         key={startIndex + index}
-        className='flex h-11 items-center gap-1.5 border border-border bg-input px-2.5 py-1 text-sm font-medium'
+        className='flex h-9 min-w-0 items-center gap-1 border border-border bg-input px-1.5'
       >
-        {startIndex + index + 1}. {word}
+        <span className='w-5 shrink-0 text-right text-xs tabular-nums text-muted-foreground'>
+          {startIndex + index + 1}
+        </span>
+        <span className='whitespace-nowrap text-sm font-medium'>{word}</span>
       </div>
     ))}
   </div>

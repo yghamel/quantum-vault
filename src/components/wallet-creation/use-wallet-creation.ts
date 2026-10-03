@@ -1,6 +1,9 @@
 import { useWallet } from '@/hooks/use-wallet';
 import { notifyVaultSessionStateChanged } from '@/hooks/use-session-timeout';
-import { toValidatedNewPasswordBytes } from '@/lib/password';
+import {
+  isNewPasswordReady,
+  toValidatedNewPasswordBytes
+} from '@/lib/password';
 import { withZeroed } from '@/lib/secrets-zeroing';
 import { runSingleFlight } from '@/lib/single-flight';
 import {
@@ -60,7 +63,6 @@ export const useWalletCreation = () => {
   const submitPasswordInFlightRef = useRef<Promise<boolean> | null>(null);
   const createWalletInFlightRef = useRef<Promise<boolean> | null>(null);
 
-  const canSubmitPassword = passwordValidation.valid && passwordsMatch;
   const syncPasswordValidationState = useCallback(() => {
     const nextPasswordValidation = validatePassword(passwordRef.current);
     const nextPasswordsMatch =
@@ -69,6 +71,12 @@ export const useWalletCreation = () => {
     setPasswordValidation(nextPasswordValidation);
     setPasswordsMatch(nextPasswordsMatch);
   }, []);
+
+  const isPasswordReady = useCallback(
+    () =>
+      isNewPasswordReady(passwordRef.current, passwordConfirmationRef.current),
+    []
+  );
 
   const setPassword = useCallback(
     (password: string) => {
@@ -152,7 +160,7 @@ export const useWalletCreation = () => {
   }, []);
 
   const submitPassword = async (): Promise<boolean> => {
-    if (!canSubmitPassword) {
+    if (!isPasswordReady()) {
       return false;
     }
 
@@ -245,7 +253,7 @@ export const useWalletCreation = () => {
     isCreatingWallet,
     passwordValidation,
     passwordsMatch,
-    canSubmitPassword,
+    isPasswordReady,
     confirmIdentityFailedAttempts,
     confirmIdentityCooldownUntil,
     setPassword,

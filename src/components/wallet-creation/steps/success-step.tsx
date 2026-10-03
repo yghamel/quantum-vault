@@ -1,6 +1,7 @@
 import { QuantumVaultMark } from '@/components/shared/quantum-vault-mark';
 import { Button } from '@/components/ui/button';
 import { useClickGate } from '@/hooks/use-click-gate';
+import { appCreditLine } from '@/lib/content';
 import { useEffect } from 'react';
 
 import { walletCreationStepContainerClassName } from '../core';
@@ -21,7 +22,7 @@ export const SuccessStep = ({ onContinue, onReady }: SuccessStepProps) => {
     <div className={walletCreationStepContainerClassName}>
       <div className='flex flex-col gap-4'>
         <div className='flex flex-col gap-8 text-foreground'>
-          <QuantumVaultMark className='h-[37.6px] w-20' />
+          <QuantumVaultMark className='size-10' />
           <h1 className='type-heading-xl'>Quantum Vault Created</h1>
         </div>
         <p className='text-footer-muted text-base leading-normal'>
@@ -34,8 +35,8 @@ export const SuccessStep = ({ onContinue, onReady }: SuccessStepProps) => {
         <Button size='flow' onClick={gatedContinue} data-testid='open-vault'>
           Open Vault
         </Button>
-        <p className='text-footer-muted text-center text-xs leading-none'>
-          &copy; PROJECT ELEVEN
+        <p className='text-footer-muted text-center text-xs leading-snug'>
+          {appCreditLine}
         </p>
       </div>
     </div>

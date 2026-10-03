@@ -14,7 +14,7 @@ export type VaultStatus = (typeof vaultStatuses)[number];
 export const vaultStatusLabels: Record<VaultStatus, string> = {
   vulnerable: 'VULNERABLE',
   safe: 'SAFE',
-  withdrawn: 'WITHDRAWN'
+  withdrawn: 'BURNED'
 };
 
 /**
