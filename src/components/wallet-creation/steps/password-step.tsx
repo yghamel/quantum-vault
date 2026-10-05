@@ -20,8 +20,8 @@ export const PasswordStep = ({
   const {
     passwordValidation,
     passwordsMatch,
-    canSubmitPassword,
     isSettingPassword,
+    isPasswordReady,
     setPassword,
     setPasswordConfirmation
   } = useWalletCreationContext();
@@ -30,8 +30,8 @@ export const PasswordStep = ({
     <SharedPasswordStep
       passwordsMatch={passwordsMatch}
       passwordValidation={passwordValidation}
-      canSubmit={canSubmitPassword}
       isSubmitting={isSettingPassword}
+      isPasswordReady={isPasswordReady}
       onPasswordChange={setPassword}
       onPasswordConfirmationChange={setPasswordConfirmation}
       onSubmit={onSubmit}

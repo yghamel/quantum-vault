@@ -2,15 +2,21 @@ import {
   AnimateScreen,
   type AnimateScreenOptions
 } from '@/components/animate-screen';
+import { useAppLifecycleLock } from '@/hooks/use-app-lifecycle-lock';
 import { ScreenContext } from '@/hooks/use-screen';
 import { useSessionTimeout } from '@/hooks/use-session-timeout';
+import { attempt } from '@/lib/attempt';
+import { libqcVaultStorage } from '@/lib/libqc-vault-storage';
 import { hasSeenOnboarding } from '@/lib/onboarding';
 import { useWalletBootQuery } from '@/providers/wallet-queries';
 import { useWallet } from '@/hooks/use-wallet';
 import { screens, type ScreenKey } from '@/screens';
 import { AnimatePresence, MotionConfig } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { resolveHydrationScreen } from './screen-provider-core';
+import {
+  resolveHydrationScreen,
+  resolveScreenAfterSessionEnd
+} from './screen-provider-core';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- used for NavigationDirection derivation
 const navigationDirections = ['back', 'forward'] as const;
@@ -43,7 +49,8 @@ export const ScreenProvider = () => {
   const walletBootQuery = useWalletBootQuery({
     initWallet,
     isEnabled: shouldRunHydration,
-    vault
+    vault,
+    vaultStorage: libqcVaultStorage
   });
 
   const navigate = (
@@ -61,15 +68,29 @@ export const ScreenProvider = () => {
     }));
   };
 
-  const handleSessionTimeout = () => {
+  const handleSessionEnd = async () => {
     clearWalletState();
-    navigate('lock', { direction: 'back', type: 'fade' });
+    const hasPasswordResult = await attempt(() => vault.hasPassword());
+    // An unreadable Keychain must not route a vault owner to Create, where a
+    // new wallet would replace theirs.
+    const hasPassword = 'error' in hasPasswordResult || hasPasswordResult.data;
+    navigate(
+      resolveScreenAfterSessionEnd({
+        hasPassword,
+        isOnboardingSeen: hasSeenOnboarding()
+      }),
+      { direction: 'back', type: 'fade' }
+    );
   };
 
   useSessionTimeout({
     activeScreen: navigationState.activeScreen,
     isVaultUnlocked: () => vault.isUnlocked(),
-    onTimeout: handleSessionTimeout
+    onTimeout: () => void handleSessionEnd()
+  });
+
+  useAppLifecycleLock({
+    onLock: () => void handleSessionEnd()
   });
 
   useEffect(() => {

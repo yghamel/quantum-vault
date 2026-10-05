@@ -1,0 +1,5 @@
+export const ETHEREUM_SEPOLIA_CHAIN_ID = 11155111;
+export const ETHEREUM_SEPOLIA_CAIP =
+  `eip155:${ETHEREUM_SEPOLIA_CHAIN_ID}` as const;
+export const BITCOIN_TESTNET_CAIP =
+  'bip122:000000000933ea01ad0ee984209779ba' as const;

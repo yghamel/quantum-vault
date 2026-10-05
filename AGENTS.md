@@ -40,6 +40,10 @@ Lock flow must: clear in-memory state -> clear cached key -> navigate to lock sc
 
 Never log: mnemonic, password, private keys, raw encrypted vault data. Env vars must use `VITE_*` prefix. Never commit `.env` files with secrets.
 
+## Mainnet Gate
+
+The app is testnet-only (Bitcoin Testnet4 + Ethereum Sepolia). Before starting ANY mainnet work (mainnet chain IDs, mainnet RPCs, real-funds builds), stop and tell the user to sign up for the providers listed in `.env.mainnet` (git-ignored, repo root) and fill in every value. Do not proceed until they confirm it is filled. Never print, log, or commit those values.
+
 ## Architecture
 
 ### Runtime Model

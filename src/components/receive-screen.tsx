@@ -264,7 +264,6 @@ export const ReceiveScreen = () => {
   const [selectedChainId, setSelectedChainId] = useState<string | null>(null);
   const [selectedPickerAccount, setSelectedPickerAccount] =
     useState<PersistedAccount | null>(null);
-
   const copyAddressToClipboard = (account: PersistedAccount) => {
     navigator.clipboard.writeText(account.address);
 
@@ -420,8 +419,9 @@ export const ReceiveScreen = () => {
   );
 
   const chainSymbol = accountChain.nativeCurrency.symbol;
+  const chainDisplayName = accountChain.name;
   const tokenFamily = getTokenFamily(accountToDisplay.chainId.namespace);
-  const vaultTitle = `${chainSymbol} Vault`;
+  const vaultTitle = `${chainDisplayName} vault`;
   const isEip155DepositAddress =
     accountToDisplay.chainId.namespace === 'eip155';
   const eip155DepositAddressParts = isEip155DepositAddress
@@ -523,6 +523,13 @@ export const ReceiveScreen = () => {
               </Button>
             </div>
           </div>
+
+          <p
+            data-testid='receive-protection-note'
+            className='type-footnote m-0 mt-4 text-success'
+          >
+            {depositFlowCopy.protectionNote}
+          </p>
         </div>
 
         <Button

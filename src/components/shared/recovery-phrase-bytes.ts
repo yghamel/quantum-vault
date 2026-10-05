@@ -1,3 +1,5 @@
+export const recoveryPhraseWordCount = 24;
+
 const spaceByte = 0x20;
 
 type SliceWordsBytesInput = {

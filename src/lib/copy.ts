@@ -16,6 +16,7 @@ export const homeCopy = {
   withdrawAction: 'Withdraw',
   refreshBalancesAria: 'Refresh balances',
   settingsAria: 'Settings',
+  backAria: 'Lock wallet and go back to start',
   alertSingular: '1 Vault Vulnerable',
   alertPlural: (count: number) => `${count} Vaults Vulnerable`,
   atRiskSuffix: 'at risk',
@@ -35,13 +36,14 @@ export const homeCopy = {
 export const vaultCardCopy = {
   tokenSingular: '1 Token',
   tokenPlural: (count: number) => `${count} Tokens`,
+  burnedTag: 'BURNED',
   unavailable: '--'
 };
 
 export const vaultDetailCopy = {
   safeBadge: 'SAFE',
   vulnerableBadge: 'VULNERABLE',
-  withdrawnBadge: 'WITHDRAWN',
+  withdrawnBadge: 'BURNED',
   totalBalanceLabel: 'TOTAL BALANCE',
   tabFunds: 'Funds',
   tabActivity: 'Activity',
@@ -72,12 +74,17 @@ export const vaultDetailUnsupportedAssetWithdrawCopy =
   'Unsupported token balances cannot be withdrawn in this version.';
 
 export const vaultAlertCopy = {
+  safeTitle: 'Quantum protected',
+  safeBody:
+    'This vault has never sent a transaction, so its public key is hidden. It stays protected until you withdraw.',
   vulnerableTitle: 'Vulnerable',
   vulnerableBody:
     'This vault is vulnerable. Withdraw funds to a quantum safe vault.',
   pendingTitle: 'Transaction pending',
-  pendingBody: 'Do not send new funds to this vault',
-  withdrawnBody: 'Do not send new funds to this vault',
+  pendingBody:
+    'This vault address is being burned. Do not send new funds to it.',
+  withdrawnBody:
+    'This vault address is burned and no longer quantum protected. Never send funds to it again.',
   pendingConfirmationBody: (chainName: string) =>
     `Waiting for ${chainName} network confirmation`,
   undoAction: 'Undo'
@@ -87,13 +94,18 @@ export const vaultSuccessCopy = {
   title: 'Successfully Withdrawn',
   body: (sourceLabel: string, destinationLabel: string) =>
     `All funds from ${sourceLabel} have been withdrawn to ${destinationLabel}`,
+  burnedNote:
+    'This vault address is now burned and no longer quantum protected. Never send funds to it again.',
   viewTxAction: 'View Withdrawal Tx'
 };
 
 export const withdrawFlowCopy = {
   warningTitle: 'Warning',
   warningBody:
-    'Withdrawing from the vault will expose your assets to quantum risk.\n\nAll assets will be withdrawn to a single address.',
+    'Once withdrawn, your funds are no longer quantum protected and this vault address is burned. Never send funds to it again.\n\nThe full balance goes to a single address so nothing is left behind unprotected.',
+  burnNoticeTitle: 'This vault address will be burned',
+  burnNoticeBody:
+    'Once withdrawn, these funds are no longer quantum protected. Never send funds to this vault address again.',
   continueAction: 'CONTINUE',
   backAction: 'CANCEL',
   suggestionBody: (vaultLabel: string) =>
@@ -101,7 +113,7 @@ export const withdrawFlowCopy = {
   suggestionYes: 'YES',
   suggestionNo: 'NO, WITHDRAW TO EXTERNAL WALLET',
   fullBalanceWithdrawHelper:
-    'A withdrawal will send your full vault balance. Partial withdrawals are not supported in the current version.',
+    'Your full balance is sent and this vault address is burned, because coins left behind would no longer be quantum protected. To send only part, withdraw to a wallet you control, send what you need, then deposit the rest into a safe vault.',
   safeDestinationLookupError:
     'Unable to find a safe vault automatically. Enter an address to continue.',
   addAddressTitle: 'Withdraw Vault',
@@ -110,7 +122,9 @@ export const withdrawFlowCopy = {
   addAddressPlaceholder: '0x...',
   reviewTitle: 'You will send',
   reviewToLegend: 'TO',
-  reviewFeeLabel: 'TX FEES',
+  reviewBitcoinMinerFeeLabel: 'Bitcoin miner fee',
+  reviewEthereumGasFeeLabel: 'Ethereum gas fee',
+  reviewTestnetWarning: 'Testnet coins have no monetary value.',
   reviewAddressLabel: (chainName: string) => `${chainName} Address`,
   cancelAction: 'CANCEL',
   confirmAction: 'CONFIRM',
@@ -129,6 +143,8 @@ export const depositFlowCopy = {
     chainSymbol === tokenFamily
       ? `Only send ${chainSymbol} to this address`
       : `Only send ${chainSymbol} / ${tokenFamily} to this address`,
+  protectionNote:
+    'Coins are quantum protected as soon as they arrive and stay protected until you withdraw.',
   vaultAddressLabel: 'Vault Address',
   copyAddressAria: 'Copy address',
   copyAddressAction: 'Copy Address'

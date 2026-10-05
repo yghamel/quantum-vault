@@ -6,6 +6,7 @@ import { match } from '@/lib/match';
 import { CurrencyValueText } from '@/components/currency/currency-value-text';
 import type { VaultStatus } from '@/modules/vaults/core';
 import type { VaultLifecycleKind } from '@/modules/vaults/lifecycle/core';
+import type { AlertTone } from '@/modules/vaults/types';
 import {
   AlertBanner,
   type AlertBannerLine
@@ -98,7 +99,7 @@ type VaultDetailStatusBannerProps = {
 };
 
 type VaultDetailBanner = {
-  tone: 'danger' | 'warning';
+  tone: AlertTone;
   title?: string;
   lines: ReadonlyArray<AlertBannerLine>;
 };
@@ -107,7 +108,16 @@ const lifecycleKindToBanner: Record<
   VaultLifecycleKind,
   VaultDetailBanner | null
 > = {
-  safe: null,
+  safe: {
+    tone: 'success',
+    title: vaultAlertCopy.safeTitle,
+    lines: [
+      {
+        id: 'safe-banner-body',
+        text: vaultAlertCopy.safeBody
+      }
+    ]
+  },
   vulnerable: {
     tone: 'danger',
     lines: [

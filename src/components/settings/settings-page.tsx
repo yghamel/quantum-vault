@@ -20,7 +20,7 @@ export const SettingsPage = ({
   titleClassName
 }: SettingsPageProps) => (
   <Screen className='sharp p-0'>
-    <div className='flex min-h-(--popup-height) flex-col justify-between bg-background'>
+    <div className='flex flex-1 flex-col justify-between bg-background'>
       <div className='min-h-0'>
         <div className='px-4 pt-4'>
           <BackButton onClick={onBack} />

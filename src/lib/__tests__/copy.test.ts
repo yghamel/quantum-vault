@@ -75,7 +75,7 @@ describe('depositFlowCopy', () => {
 describe('withdrawFlowCopy', () => {
   it('surfaces full-balance withdrawal helper copy (ENG-1817)', () => {
     expect(withdrawFlowCopy.fullBalanceWithdrawHelper).toBe(
-      'A withdrawal will send your full vault balance. Partial withdrawals are not supported in the current version.'
+      'Your full balance is sent and this vault address is burned, because coins left behind would no longer be quantum protected. To send only part, withdraw to a wallet you control, send what you need, then deposit the rest into a safe vault.'
     );
   });
 

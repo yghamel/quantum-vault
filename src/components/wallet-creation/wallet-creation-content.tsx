@@ -129,9 +129,6 @@ export const WalletCreationContent = () => {
     };
   }, [clearConfirmIdentityCooldown, clearSensitiveState]);
 
-  const passwordValidation = walletCreation.passwordValidation;
-  const passwordsMatch = walletCreation.passwordsMatch;
-
   const handleNext = () => {
     setAnimateScreenOptions(forwardSlideAnimateOptions);
     toNextStep();
@@ -143,7 +140,7 @@ export const WalletCreationContent = () => {
   };
 
   const handlePasswordSubmit = async () => {
-    if (!passwordValidation.valid || !passwordsMatch) {
+    if (!walletCreation.isPasswordReady()) {
       return;
     }
 
@@ -215,7 +212,7 @@ export const WalletCreationContent = () => {
   return (
     <>
       <Screen className='sharp'>
-        <div className='flex flex-1 flex-col overflow-hidden'>
+        <div className='flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto'>
           <AnimatePresence
             mode='wait'
             custom={animateScreenOptions}
@@ -224,7 +221,7 @@ export const WalletCreationContent = () => {
             <AnimateScreen
               key={currentStep}
               custom={animateScreenOptions}
-              className='flex flex-1 flex-col'
+              className='flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden'
             >
               {walletCreation.isCreatingWallet ? (
                 <CreatingWalletLoader />

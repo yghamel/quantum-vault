@@ -1,17 +1,20 @@
-import type { RefObject } from 'react';
+import { useRef, useState, type RefObject } from 'react';
 import type { PasswordValidationResult } from '@project-eleven/libqc';
 import { Loader2Icon } from 'lucide-react';
 
 import { FlowStepFooter } from '@/components/shared/flow-step-footer';
 import { FlowStepHeader } from '@/components/shared/flow-step-header';
 import { PasswordForm } from '@/components/shared/password-form';
+import { readPasswordFieldValues } from '@/components/shared/password-field-dom';
+import type { PasswordSubmitAttempt } from '@/components/shared/password-form-validation';
 import { Button } from '@/components/ui/button';
+import { useVisualViewportKeyboardInset } from '@/hooks/use-visual-viewport-keyboard-inset';
 
 type PasswordStepProps = {
   passwordsMatch: boolean;
   passwordValidation: PasswordValidationResult;
-  canSubmit: boolean;
   isSubmitting: boolean;
+  isPasswordReady: () => boolean;
   onPasswordChange: (value: string) => void;
   onPasswordConfirmationChange: (value: string) => void;
   onSubmit: () => void;
@@ -34,8 +37,8 @@ const passwordStepDescription =
 export const PasswordStep = ({
   passwordsMatch,
   passwordValidation,
-  canSubmit,
   isSubmitting,
+  isPasswordReady,
   onPasswordChange,
   onPasswordConfirmationChange,
   onSubmit,
@@ -43,18 +46,52 @@ export const PasswordStep = ({
   passwordInputRef,
   passwordConfirmationInputRef
 }: PasswordStepProps) => {
-  const isSubmitDisabled = !canSubmit || isSubmitting;
+  const fallbackPasswordInputRef = useRef<HTMLInputElement>(null);
+  const fallbackPasswordConfirmationInputRef = useRef<HTMLInputElement>(null);
+  const resolvedPasswordInputRef = passwordInputRef ?? fallbackPasswordInputRef;
+  const resolvedPasswordConfirmationInputRef =
+    passwordConfirmationInputRef ?? fallbackPasswordConfirmationInputRef;
+  const [submitAttempt, setSubmitAttempt] = useState<PasswordSubmitAttempt>();
+  const keyboardInset = useVisualViewportKeyboardInset();
+
+  const handlePasswordChange = (value: string) => {
+    setSubmitAttempt(undefined);
+    onPasswordChange(value);
+  };
+
+  const handlePasswordConfirmationChange = (value: string) => {
+    setSubmitAttempt(undefined);
+    onPasswordConfirmationChange(value);
+  };
 
   const handleSubmit = () => {
-    if (isSubmitDisabled) {
+    if (isSubmitting) {
+      return;
+    }
+
+    const { password, passwordConfirmation } = readPasswordFieldValues({
+      passwordInputRef: resolvedPasswordInputRef,
+      passwordConfirmationInputRef: resolvedPasswordConfirmationInputRef
+    });
+    onPasswordChange(password);
+    onPasswordConfirmationChange(passwordConfirmation);
+    if (!isPasswordReady()) {
+      setSubmitAttempt({
+        hasPassword: password.length > 0,
+        hasPasswordConfirmation: passwordConfirmation.length > 0
+      });
       return;
     }
     onSubmit();
   };
 
   return (
-    <div className='flex flex-1 min-h-0 flex-col justify-between'>
-      <div>
+    <div
+      data-testid='password-step'
+      className='flex h-full min-h-0 flex-1 flex-col overflow-hidden'
+      style={keyboardInset > 0 ? { paddingBottom: keyboardInset } : undefined}
+    >
+      <div className='min-h-0 flex-1 overflow-y-auto overscroll-contain'>
         <FlowStepHeader
           title={passwordStepTitle}
           description={passwordStepDescription}
@@ -62,21 +99,27 @@ export const PasswordStep = ({
           backDisabled={isSubmitting}
         />
 
-        <div className='mt-8'>
+        <div className='mt-8 pb-2'>
           <PasswordForm
             passwordsMatch={passwordsMatch}
             passwordValidation={passwordValidation}
-            onPasswordChange={onPasswordChange}
-            onPasswordConfirmationChange={onPasswordConfirmationChange}
+            onPasswordChange={handlePasswordChange}
+            onPasswordConfirmationChange={handlePasswordConfirmationChange}
             onSubmit={handleSubmit}
-            passwordInputRef={passwordInputRef}
-            passwordConfirmationInputRef={passwordConfirmationInputRef}
+            submitAttempt={submitAttempt}
+            passwordInputRef={resolvedPasswordInputRef}
+            passwordConfirmationInputRef={resolvedPasswordConfirmationInputRef}
           />
         </div>
       </div>
 
-      <FlowStepFooter>
-        <Button size='flow' disabled={isSubmitDisabled} onClick={handleSubmit}>
+      <FlowStepFooter className='shrink-0 bg-background'>
+        <Button
+          size='flow'
+          data-testid='password-continue-button'
+          disabled={isSubmitting}
+          onClick={handleSubmit}
+        >
           {isSubmitting ? <Loader2Icon className='animate-spin' /> : 'Continue'}
         </Button>
       </FlowStepFooter>

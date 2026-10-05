@@ -46,6 +46,12 @@ const toneToClassName: Record<
     icon: 'text-warning',
     title: 'text-warning',
     body: 'text-warning'
+  },
+  success: {
+    container: 'border-y border-success bg-success/10',
+    icon: 'text-success',
+    title: 'text-success',
+    body: 'text-success'
   }
 };
 
@@ -54,7 +60,7 @@ const toneToClassName: Record<
  *
  * Used on:
  *  - Home alerts state (44:12930) - vulnerable vault count + per-vault lines.
- *  - Vault Detail vulnerable banner (32:1597).
+ *  - Vault Detail vulnerable banner (32:1597) and quantum-protected banner.
  *  - Vault Detail pending/sent banners (43:4152, 44:3776, 44:8676, 44:8696).
  *
  * Tone controls fill + stroke color. Body lines render one per line; an
@@ -91,9 +97,7 @@ export const AlertBanner = ({
       </div>
       <div className='min-w-0 flex-1 space-y-0.5'>
         {title ? (
-          <p className={cn('type-label truncate', toneClasses.title)}>
-            {title}
-          </p>
+          <p className={cn('type-label', toneClasses.title)}>{title}</p>
         ) : null}
         {lines.map(line => (
           <p key={line.id} className={cn('type-body-sm', toneClasses.body)}>

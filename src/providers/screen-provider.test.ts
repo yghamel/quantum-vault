@@ -1,6 +1,38 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveHydrationScreen } from './screen-provider-core';
+import {
+  resolveHydrationScreen,
+  resolveScreenAfterSessionEnd
+} from './screen-provider-core';
+
+describe('resolveScreenAfterSessionEnd', () => {
+  it('routes to lock when a password exists', () => {
+    expect(
+      resolveScreenAfterSessionEnd({
+        hasPassword: true,
+        isOnboardingSeen: true
+      })
+    ).toBe('lock');
+  });
+
+  it('routes to initial when there is no password and onboarding is seen', () => {
+    expect(
+      resolveScreenAfterSessionEnd({
+        hasPassword: false,
+        isOnboardingSeen: true
+      })
+    ).toBe('initial');
+  });
+
+  it('routes to onboarding when there is no password and onboarding is unseen', () => {
+    expect(
+      resolveScreenAfterSessionEnd({
+        hasPassword: false,
+        isOnboardingSeen: false
+      })
+    ).toBe('onboarding');
+  });
+});
 
 describe('resolveHydrationScreen', () => {
   it('routes no-password users to onboarding when onboarding is unseen', () => {
@@ -21,13 +53,13 @@ describe('resolveHydrationScreen', () => {
     expect(result).toBe('initial');
   });
 
-  it('routes locked hydration state to lock', () => {
+  it('routes locked hydration state to initial so launch offers log in or sign up', () => {
     const result = resolveHydrationScreen({
       hydrationState: { kind: 'locked' },
       isOnboardingSeen: true
     });
 
-    expect(result).toBe('lock');
+    expect(result).toBe('initial');
   });
 
   it('routes unlocked ready and degraded states to home', () => {

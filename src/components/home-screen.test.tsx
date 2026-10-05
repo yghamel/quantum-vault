@@ -228,7 +228,7 @@ describe('HomeScreen', () => {
     const text = stripTags(renderHome());
 
     expect(text).toContain('TOTAL BALANCE$12.50');
-    expect(text).toContain('WITHDRAWN · 3');
+    expect(text).toContain('BURNED · 3');
     expect(text.match(/\$0\.00/g)).toHaveLength(3);
     expect(text.match(/0 Tokens/g)).toHaveLength(3);
     expect(text).not.toContain('$15.04');

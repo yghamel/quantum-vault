@@ -5,7 +5,17 @@ import {
   type Password
 } from '@project-eleven/libqc';
 
+import { areEqualBytes } from './utils';
+
 const nonEmptyPasswordLength = 1;
+
+export const isNewPasswordReady = (
+  passwordBytes: Uint8Array,
+  passwordConfirmationBytes: Uint8Array
+): boolean =>
+  passwordBytes.length >= nonEmptyPasswordLength &&
+  validatePassword(passwordBytes).valid &&
+  areEqualBytes(passwordBytes, passwordConfirmationBytes);
 
 export const toValidatedNewPasswordBytes = (
   passwordBytes: Uint8Array

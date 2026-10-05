@@ -1,14 +1,19 @@
+import { Capacitor } from '@capacitor/core';
 import { NoPasswordSetError, VaultCorruptedError } from '@project-eleven/libqc';
 import { Loader2Icon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
+import { readPasswordFieldValues } from '@/components/shared/password-field-dom';
 import { PasswordRevealToggle } from '@/components/shared/password-reveal-toggle';
 import { QuantumVaultMark } from '@/components/shared/quantum-vault-mark';
+import { BackButton } from '@/components/ui/back-button';
+import { HelpButton } from '@/components/shared/help-button';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { useBoolean } from '@/hooks/use-boolean';
 import { useScreen } from '@/hooks/use-screen';
+import { useVisualViewportKeyboardInset } from '@/hooks/use-visual-viewport-keyboard-inset';
 import { useWallet } from '@/hooks/use-wallet';
 import { attempt } from '@/lib/attempt';
 import { toastMessages } from '@/lib/content';
@@ -21,30 +26,42 @@ import { Screen } from './screen';
 
 const textEncoder = new TextEncoder();
 
+// Focusing on mount raises the iOS keyboard over the Unlock button before the
+// user asks for it.
+const shouldAutoFocus = !Capacitor.isNativePlatform();
+
 export const LockScreen = () => {
   const { navigate } = useScreen();
   const { initWallet, vault, clearWalletState } = useWallet();
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<Uint8Array>(new Uint8Array());
-  const [, setPasswordRevision] = useState(0);
+  const keyboardInset = useVisualViewportKeyboardInset();
 
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordRevealed, passwordReveal] = useBoolean();
+  const [isPasswordMissing, setIsPasswordMissing] = useState(false);
 
   const clearPassword = useCallback(() => {
     clearSecretRef(passwordRef);
-    setPasswordRevision(revision => revision + 1);
   }, []);
 
   const setPassword = useCallback((password: string) => {
     replaceSecretRef(passwordRef, textEncoder.encode(password));
-    setPasswordRevision(revision => revision + 1);
   }, []);
 
-  const isSubmitDisabled = passwordRef.current.length === 0 || isLoading;
+  const handlePasswordChange = (password: string) => {
+    setIsPasswordMissing(false);
+    setPassword(password);
+  };
 
   const unlock = async () => {
-    if (isLoading || passwordRef.current.length === 0) {
+    if (isLoading) {
+      return;
+    }
+
+    setPassword(readPasswordFieldValues({ passwordInputRef }).password);
+    if (passwordRef.current.length === 0) {
+      setIsPasswordMissing(true);
       return;
     }
 
@@ -103,6 +120,16 @@ export const LockScreen = () => {
     navigate('wallet-recovery');
   };
 
+  const handleBackClick = () => {
+    if (isLoading) {
+      return;
+    }
+
+    clearPassword();
+    zeroOut(passwordInputRef);
+    navigate('initial', { direction: 'back' });
+  };
+
   useEffect(() => {
     return () => {
       zeroOut(passwordInputRef);
@@ -112,10 +139,22 @@ export const LockScreen = () => {
 
   return (
     <Screen className='sharp'>
-      <div className='flex flex-1 min-h-0 flex-col justify-between'>
-        <div>
+      <div
+        className='flex min-h-0 flex-1 flex-col overflow-hidden'
+        style={keyboardInset > 0 ? { paddingBottom: keyboardInset } : undefined}
+      >
+        <div className='min-h-0 flex-1 overflow-y-auto overscroll-contain'>
+          <div className='mb-6 flex items-center justify-between'>
+            <BackButton
+              onClick={handleBackClick}
+              disabled={isLoading}
+              label='Back to start'
+              testId='lock-back-button'
+            />
+            <HelpButton />
+          </div>
           <div className='flex flex-col gap-8 text-foreground'>
-            <QuantumVaultMark className='h-[37.6px] w-20' />
+            <QuantumVaultMark className='size-10' />
             <div className='flex flex-col gap-3'>
               <h1 className='type-heading-lg'>Welcome Back</h1>
               <p className='type-body text-muted-foreground'>
@@ -128,10 +167,11 @@ export const LockScreen = () => {
             <Field
               label='Password'
               type={isPasswordRevealed ? 'text' : 'password'}
-              onChange={setPassword}
+              onChange={handlePasswordChange}
               placeholder='Enter your password'
-              autoFocus
+              autoFocus={shouldAutoFocus}
               autoComplete='current-password'
+              error={isPasswordMissing ? 'Password is required.' : undefined}
               inputRef={passwordInputRef}
               onSubmit={() => void unlock()}
               trailingAddon={
@@ -155,11 +195,11 @@ export const LockScreen = () => {
           </div>
         </div>
 
-        <div className='flex flex-col gap-4 pt-4'>
+        <div className='flex shrink-0 flex-col gap-4 bg-background pt-4'>
           <Button
             size='flow'
             onClick={() => void unlock()}
-            disabled={isSubmitDisabled}
+            disabled={isLoading}
             data-testid='unlock-wallet-button'
           >
             {isLoading ? <Loader2Icon className='animate-spin' /> : 'Unlock'}

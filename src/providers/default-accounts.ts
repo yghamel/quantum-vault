@@ -10,9 +10,10 @@ type SupportedChainWithIdentity = {
   chainId: ChainId;
 };
 
+/** Bitcoin Testnet + Ethereum Sepolia only. No Mainnet defaults. */
 export const defaultAccountChainIds = [
-  'bip122:000000000019d6689c085ae165831e93',
-  'eip155:1'
+  'bip122:000000000933ea01ad0ee984209779ba',
+  'eip155:11155111'
 ] as const;
 
 export const hasAccountForChain = ({

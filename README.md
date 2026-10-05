@@ -1,40 +1,29 @@
-# Quantum Vault
+# Quantum Vault (iOS / Capacitor)
 
-Quantum Vault by [Project Eleven](https://projecteleven.com/) provides sensible quantum security on Bitcoin & Ethereum today.
+Non-custodial **testnet** wallet UI forked from [p-11/quantum-vault@v1.0.1](https://github.com/p-11/quantum-vault/releases/tag/v1.0.1).
 
-Built for the quantum era, Quantum Vault keeps BTC and ETH protected behind hash functions, monitors for public key exposure, and warns you when a vault becomes vulnerable.
+**Networks:** Bitcoin Testnet4 + Ethereum Sepolia only. No Mainnet. No real-value funds.
 
-Quantum Vault is a practical first step to reduce exposure today while the ecosystem moves toward full post-quantum security.
+Pinned SDK: `@project-eleven/libqc@1.0.0`. Package manager: **pnpm only**.
 
-> This is a reference implementation rather than a production wallet. The code has been audited by Cure53.
+See:
 
-## Install
+- `IOS_PORT_PLAN.md` — conversion inventory and blockers
+- `docs/ios-development.md` — Xcode / Capacitor setup
+- `docs/threat-model-ios.md` — review boundaries
 
-1. Download `chrome-extension.zip` from the latest [release](https://github.com/p-11/quantum-vault/releases) and unzip it.
-2. Open `chrome://extensions/`, toggle **Developer mode** on, click **Load unpacked**, and select the unzipped folder.
+Upstream reference implementations were audited; **this modified iOS application is not claimed audited or production-ready.**
 
-Works on Chrome and other Chromium browsers (Brave, Edge, Arc).
-
-## Build From Source
-
-Requires [Node.js](https://nodejs.org/en) and [pnpm](https://pnpm.io/).
+## Quick start
 
 ```sh
-git clone https://github.com/p-11/quantum-vault.git
-cd quantum-vault
-cp .env.example .env   # fill in the values
+cp .env.example .env
 pnpm install
-pnpm build:dev         # output in build/
+pnpm build:prod
+pnpm exec cap sync ios
+pnpm exec cap open ios
 ```
 
-Then load `build/` as an unpacked extension. See `.env.example` for the required environment variables.
-
-For local development with HMR: `pnpm dev`.
-
-## Issues
-
-File bugs on [GitHub Issues](https://github.com/p-11/quantum-vault/issues). For security disclosures, contact Project Eleven directly.
-
-## License
+## Licence
 
 [MIT](./LICENSE)

@@ -37,6 +37,30 @@ export const getPasswordConfirmationErrorOnBlur = ({
   return 'Passwords do not match.';
 };
 
+export type PasswordSubmitAttempt = {
+  hasPassword: boolean;
+  hasPasswordConfirmation: boolean;
+};
+
+export const getPasswordErrorOnSubmit = ({
+  hasPassword,
+  failedRequirements
+}: GetPasswordErrorOnBlurInput): string | undefined =>
+  hasPassword
+    ? getPasswordErrorMessage(failedRequirements)
+    : 'Password is required.';
+
+export const getPasswordConfirmationErrorOnSubmit = ({
+  hasPasswordConfirmation,
+  passwordsMatch
+}: GetPasswordConfirmationErrorOnBlurInput): string | undefined =>
+  hasPasswordConfirmation
+    ? getPasswordConfirmationErrorOnBlur({
+        hasPasswordConfirmation,
+        passwordsMatch
+      })
+    : 'Confirm your password.';
+
 type GetDisplayedInlineErrorInput = {
   isTouched: boolean;
   isFocused: boolean;

@@ -7,6 +7,10 @@ import type {
 
 import type { CurrencyCode } from '@/lib/currency';
 import { attempt } from '@/lib/attempt';
+import {
+  reconcileVaultStorageOnFreshInstall,
+  type ClearableVaultStorage
+} from '@/lib/native-vault-install-reconcile';
 import { getInterfaceAssets, totalCurrencyValue } from '@/lib/utils';
 import {
   providerQueryKeys,
@@ -194,18 +198,39 @@ export const useWalletSummaryQuery = ({
     walletSummaryQueryOptions({ currency, isEnabled, mode, sessionId, vault })
   );
 
+export const useHasPasswordQuery = ({
+  vault
+}: {
+  vault: Pick<WalletBootVaultShape, 'hasPassword'>;
+}) =>
+  useQuery({
+    queryKey: providerQueryKeys.hasPassword(),
+    queryFn: () => vault.hasPassword(),
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
+    refetchOnWindowFocus: false
+  });
+
 export const useWalletBootQuery = ({
   initWallet,
   isEnabled,
-  vault
+  vault,
+  vaultStorage
 }: {
   initWallet(): Promise<InitWalletResult>;
   isEnabled: boolean;
   vault: WalletBootVaultShape;
+  vaultStorage: ClearableVaultStorage;
 }) =>
   useQuery({
     queryKey: providerQueryKeys.boot(),
     queryFn: async (): Promise<WalletHydrationState> => {
+      // A failed Keychain clear must not block boot; the marker stays unset so
+      // the next launch retries.
+      await attempt(() =>
+        reconcileVaultStorageOnFreshInstall({ vaultStorage })
+      );
       const bootState = await loadWalletBootState(vault);
       if (!bootState.hasPassword) {
         return { kind: 'no-password' };

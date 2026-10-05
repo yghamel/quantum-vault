@@ -44,13 +44,18 @@ import {
   resolveOwnedDestinationAccountId,
   resolveOwnedWithdrawalDestinationAccountId
 } from '@/providers/wallet-query-invalidation';
+import { libqcVaultStorage } from '@/lib/libqc-vault-storage';
 import {
   getBitcoinApiUrl,
   getEthereumBundlerApiKey,
   getEthereumBundlerRpcUrl,
-  getEthereumRpcUrl,
-  getRegisterUrl
+  getEthereumRpcUrl
 } from '@/lib/env';
+import {
+  BITCOIN_TESTNET_CAIP,
+  ETHEREUM_SEPOLIA_CAIP,
+  ETHEREUM_SEPOLIA_CHAIN_ID
+} from '@/lib/network-ids';
 import { assertNoNonInterfaceAssetBalances } from '@/lib/vault-operations';
 import {
   loadWalletSummary,
@@ -64,7 +69,6 @@ import {
   LibQC,
   Mnemonic,
   toChain,
-  WebStorage,
   type AddressIndex,
   type Asset,
   type AssetName,
@@ -149,8 +153,8 @@ export type WithdrawVaultFundsResult = {
 
 type WithdrawReconcileSyncVisibility = 'visible' | 'silent';
 
-const storage = new WebStorage();
-const bitcoinMainnetReference = '000000000019d6689c085ae165831e93';
+/** Bitcoin testnet CAIP-2 reference (libqc `BITCOIN_TESTNET_REF`). Mainnet disabled. */
+const bitcoinTestnetReference = BITCOIN_TESTNET_CAIP.split(':')[1]!;
 const emptyAccounts: Array<PersistedAccount> = [];
 const emptyAssets: Array<Asset> = [];
 const withdrawReconcileIntervalMs = convertDuration(2, 's', 'ms');
@@ -173,22 +177,23 @@ const idleWithdrawSyncState: WithdrawSyncState = {
 const toRpcUrl = (value: string): RpcUrl => value as RpcUrl;
 
 /**
- * Builds the chain spec list lazily so the env getters
- * (`getBitcoinApiUrl`, `getEthereumRpcUrl`) are invoked at wallet boot
+ * Builds the chain spec list lazily so env getters are invoked at wallet boot
  * time inside an `attempt()` boundary, not at module-import time.
  *
- * If this lived at module scope, a missing env var would throw before
- * any React boundary could catch it and the popup would fail to mount
- * with a cryptic error.
+ * Runtime networks: Bitcoin Testnet4 + Ethereum Sepolia only. No Mainnet.
+ *
+ * Bitcoin reads and broadcasts go to testnet4 (where faucets pay out); the
+ * chain id keeps libqc's testnet reference because testnet4 shares testnet's
+ * address and signing parameters, so persisted accounts stay valid.
  */
 const buildChains = (): ChainSpecification[] => [
   {
     id: 0,
     chainId: new ChainId({
       namespace: 'bip122',
-      reference: bitcoinMainnetReference
+      reference: bitcoinTestnetReference
     }),
-    name: 'Bitcoin' as ChainName,
+    name: 'Bitcoin Testnet4' as ChainName,
     network: 'bitcoin' as ChainNetwork,
     iconUrl:
       'https://assets.coingecko.com/coins/images/1/large/bitcoin.png' as IconUrl,
@@ -197,34 +202,33 @@ const buildChains = (): ChainSpecification[] => [
       name: 'Bitcoin' as AssetName,
       symbol: 'BTC' as Symbol
     },
-    testnet: false as Testnet,
+    testnet: true as Testnet,
     rpcUrls: [toRpcUrl(getBitcoinApiUrl())]
   },
   {
     id: 1,
-    chainId: new ChainId({ namespace: 'eip155', reference: '1' }),
-    name: 'Ethereum' as ChainName,
-    network: 'ethereum' as ChainNetwork,
+    chainId: new ChainId({
+      namespace: 'eip155',
+      reference: String(ETHEREUM_SEPOLIA_CHAIN_ID)
+    }),
+    name: 'Ethereum Sepolia' as ChainName,
+    network: 'sepolia' as ChainNetwork,
     iconUrl:
       'https://assets.coingecko.com/asset_platforms/images/279/large/ethereum.png' as IconUrl,
     nativeCurrency: {
       decimals: 18 as Decimals,
-      name: 'Ether' as AssetName,
+      name: 'Sepolia ETH' as AssetName,
+      // libqc resolves the native asset by symbol and only knows `ETH`;
+      // the chain name and asset name carry the Sepolia labelling.
       symbol: 'ETH' as Symbol
     },
-    testnet: false as Testnet,
+    testnet: true as Testnet,
     rpcUrls: [toRpcUrl(getEthereumRpcUrl())]
   }
 ];
 
 /**
- * Creates a bundler config provider closed over the same resolved chain
- * list that LibQC receives. The factory shape exists so both LibQC and
- * the bundler provider can be constructed lazily inside the boot
- * `attempt()` block, sharing one `chains` array. The bundler env reads
- * (`getEthereumBundlerRpcUrl`, `getEthereumBundlerApiKey`) stay lazy -
- * they only throw when an account-abstraction transaction is actually
- * submitted, not at boot.
+ * Bundler config for Ethereum Sepolia only. Mainnet bundler paths are absent.
  */
 const createBundlerConfigProvider =
   (chains: ChainSpecification[]): BundlerConfigProvider =>
@@ -234,18 +238,19 @@ const createBundlerConfigProvider =
       throw new Error(`Chain ${chainId.toString()} not supported`);
     }
 
-    if (chainId.toString() === 'eip155:1') {
+    if (chainId.toString() === ETHEREUM_SEPOLIA_CAIP) {
       return {
         chain: toChain(chain),
         urls: [toRpcUrl(getEthereumBundlerRpcUrl())],
         headers: {
-          // P11TODO: remove once we no longer need to pass an API key
           Authorization: `Bearer ${getEthereumBundlerApiKey()}`
         }
       };
     }
 
-    throw new Error(`Chain ${chainId.toString()} not supported`);
+    throw new Error(
+      `Bundler unsupported for chain ${chainId.toString()} (testnet Sepolia only)`
+    );
   };
 
 /**
@@ -379,13 +384,9 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     const result = attempt(() => {
       const chains = buildChains();
       return new LibQC(
-        storage,
+        libqcVaultStorage,
         chains,
-        createBundlerConfigProvider(chains),
-        undefined,
-        {
-          registerUrl: getRegisterUrl()
-        }
+        createBundlerConfigProvider(chains)
       );
     });
     if ('error' in result) {

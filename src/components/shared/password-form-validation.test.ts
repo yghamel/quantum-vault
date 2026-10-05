@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import {
   getDisplayedInlineError,
   getPasswordConfirmationErrorOnBlur,
-  getPasswordErrorOnBlur
+  getPasswordConfirmationErrorOnSubmit,
+  getPasswordErrorOnBlur,
+  getPasswordErrorOnSubmit
 } from './password-form-validation';
 
 describe('getPasswordErrorOnBlur', () => {
@@ -52,6 +54,61 @@ describe('getPasswordConfirmationErrorOnBlur', () => {
     });
 
     expect(result).toBeUndefined();
+  });
+});
+
+describe('getPasswordErrorOnSubmit', () => {
+  it('requires a password when the field is empty', () => {
+    expect(
+      getPasswordErrorOnSubmit({
+        hasPassword: false,
+        failedRequirements: ['minLength']
+      })
+    ).toBe('Password is required.');
+  });
+
+  it('returns the first mapped error when password is non-empty', () => {
+    expect(
+      getPasswordErrorOnSubmit({
+        hasPassword: true,
+        failedRequirements: ['minLength']
+      })
+    ).toBe('Password is too short. Use at least 8 characters.');
+  });
+
+  it('returns undefined when every requirement passes', () => {
+    expect(
+      getPasswordErrorOnSubmit({ hasPassword: true, failedRequirements: [] })
+    ).toBeUndefined();
+  });
+});
+
+describe('getPasswordConfirmationErrorOnSubmit', () => {
+  it('requires a confirmation when the field is empty', () => {
+    expect(
+      getPasswordConfirmationErrorOnSubmit({
+        hasPasswordConfirmation: false,
+        passwordsMatch: false
+      })
+    ).toBe('Confirm your password.');
+  });
+
+  it('returns mismatch error when confirmation differs from password', () => {
+    expect(
+      getPasswordConfirmationErrorOnSubmit({
+        hasPasswordConfirmation: true,
+        passwordsMatch: false
+      })
+    ).toBe('Passwords do not match.');
+  });
+
+  it('returns undefined when confirmation matches password', () => {
+    expect(
+      getPasswordConfirmationErrorOnSubmit({
+        hasPasswordConfirmation: true,
+        passwordsMatch: true
+      })
+    ).toBeUndefined();
   });
 });
 

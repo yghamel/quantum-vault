@@ -41,9 +41,14 @@
   --font-sans: 'thrya-sans', system-ui, sans-serif;
   --font-mono: 'geist-mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --popup-width: 360px;
-  --popup-height: 600px;
-  --popup-content-height: 568px;
+  --popup-width: 100%;
+  /* The App shell pads the safe areas, so screens get what is left. */
+  --popup-height: calc(
+    100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)
+  );
+  --popup-content-height: calc(
+    100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px
+  );
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
