@@ -39,3 +39,4 @@ ios/DerivedData
 playwright-report
 blob-report
 test-results
+.cache

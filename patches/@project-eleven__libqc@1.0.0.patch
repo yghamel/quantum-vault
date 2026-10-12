@@ -1,0 +1,17 @@
+diff --git a/dist/assets.json b/dist/assets.json
+index 0468af7f87a2fc34a5de26cb6c7d89ddb53c5ff7..6900e9553a88b199715c87bae82a1a7fc0473922 100644
+--- a/dist/assets.json
++++ b/dist/assets.json
+@@ -17,6 +17,12 @@
+                 "decimals": 18,
+                 "name": "Ethereum",
+                 "symbol": "ETH"
++            },
++            {
++                "assetType": "eip155:11155111/slip44:60",
++                "decimals": 18,
++                "name": "Sepolia Ether",
++                "symbol": "ETH"
+             }
+         ]
+     },
