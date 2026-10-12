@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { useCurrency } from '@/hooks/use-currency';
 import { formatVaultNumberForDisplay, vaultCardCopy } from '@/lib/copy';
 import type { VaultStatus } from '../core';
+import { usePendingBitcoinDeposit } from '../data/use-pending-bitcoin-deposit';
 import type { VaultLifecycleKind } from '../lifecycle/core';
 import type { AccountChainMetadata, VaultSnapshot } from '../types';
 import { shortenVaultAddress } from './address';
@@ -71,6 +72,7 @@ export const VaultCard = ({
 }: VaultCardProps) => {
   const { currency } = useCurrency();
   const config = statusToConfig[status];
+  const pendingDepositLabel = usePendingBitcoinDeposit(account);
   const balanceDisplay = getVaultCardBalanceDisplay({
     snapshot,
     lifecycleKind
@@ -113,6 +115,15 @@ export const VaultCard = ({
                 className='ml-2 bg-secondary px-1.5 py-0.5 type-caption font-medium uppercase tracking-wide text-foreground'
               >
                 {vaultCardCopy.burnedTag}
+              </span>
+            ) : null}
+            {pendingDepositLabel !== undefined ? (
+              <span
+                data-testid='vault-card-pending-tag'
+                aria-label={`${pendingDepositLabel} pending`}
+                className='ml-2 bg-warning/15 px-1.5 py-0.5 type-caption font-medium uppercase tracking-wide text-warning'
+              >
+                {vaultCardCopy.pendingTag}
               </span>
             ) : null}
           </p>

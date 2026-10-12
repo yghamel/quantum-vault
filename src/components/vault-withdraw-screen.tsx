@@ -9,6 +9,7 @@ import { convertDuration } from '@/lib/time';
 import { formatAssetBalance } from '@/lib/utils';
 import {
   NonInterfaceAssetBalanceError,
+  WithdrawalFeeTooHighError,
   loadVaultWithdrawSummary,
   type SummaryItem,
   type SummaryState
@@ -19,18 +20,19 @@ import {
 } from '@/modules/vaults/data/mappers/vault';
 import type { VaultLifecycleAccount } from '@/modules/vaults/lifecycle/account-read-model';
 import { useVaultLifecycleAccounts } from '@/modules/vaults/lifecycle/use-vault-lifecycle-accounts';
+import { WithdrawalInProgressError } from '@/providers/withdrawal-result';
 import { shortenVaultAddress } from '@/modules/vaults/shared/address';
 import { AlertBanner } from '@/modules/vaults/shared/alert-banner';
 import { WarningCircleIcon } from '@/modules/vaults/shared/icons';
 import { resolveAssetIconUrl } from '@/modules/vaults/shared/asset-icon';
 import { StatusBadge } from '@/modules/vaults/shared/status-badge';
+import { getWithdrawDestinationError } from '@/modules/vaults/shared/withdraw-destination';
 import type { ScreenKey } from '@/screens';
 import {
   InsufficientNativeBalanceForGasError,
   InvalidDestinationAddressError,
   NoWithdrawableAssetsError,
   VaultCorruptedError,
-  isAddress,
   isBitcoinChain,
   type PersistedAccount
 } from '@project-eleven/libqc';
@@ -113,6 +115,14 @@ const AssetList = ({ chainIconUrl, summaryState }: AssetListProps) => {
     'unsupported-assets': () => (
       <p className='type-body-sm text-destructive'>
         Unsupported token balances cannot be withdrawn in this version.
+      </p>
+    ),
+    'invalid-destination': () => (
+      <p
+        data-testid='withdraw-invalid-destination'
+        className='type-body-sm text-destructive'
+      >
+        {withdrawFlowCopy.invalidBitcoinDestination}
       </p>
     ),
     idle: () => null
@@ -494,6 +504,12 @@ const mapWithdrawError = (error: unknown): string => {
   if (error instanceof NonInterfaceAssetBalanceError) {
     return 'Unsupported token balances cannot be withdrawn in this version.';
   }
+  if (error instanceof WithdrawalFeeTooHighError) {
+    return 'The network fee is unusually high for this balance, so nothing was sent. Try again later.';
+  }
+  if (error instanceof WithdrawalInProgressError) {
+    return 'A withdrawal is already in progress. Wait for it to finish.';
+  }
 
   return 'An unexpected error occurred.';
 };
@@ -510,37 +526,6 @@ const getInitialStep = ({
   }
 
   return 'entry-loading';
-};
-
-const addressValidationByNamespace = {
-  bip122: {
-    getError: () => null
-  },
-  eip155: {
-    getError: (destination: string) =>
-      isAddress(destination) ? null : 'Please enter a valid EVM address.'
-  }
-} as const;
-
-type SupportedWithdrawNamespace = keyof typeof addressValidationByNamespace;
-
-const isSupportedWithdrawNamespace = (
-  namespace: string
-): namespace is SupportedWithdrawNamespace =>
-  namespace in addressValidationByNamespace;
-
-const getAddressValidationError = ({
-  destination,
-  namespace
-}: {
-  destination: string;
-  namespace: string;
-}): string | null => {
-  if (!isSupportedWithdrawNamespace(namespace)) {
-    throw new Error(`Unsupported withdraw namespace: ${namespace}`);
-  }
-
-  return addressValidationByNamespace[namespace].getError(destination);
 };
 
 type SuggestedSafeDestination = {
@@ -619,6 +604,8 @@ export const VaultWithdrawScreen = () => {
   });
 
   const summaryRequestIdRef = useRef(0);
+  // The exiting review step stays clickable during its exit animation.
+  const isWithdrawSubmittingRef = useRef(false);
   const accountChainByReference = buildAccountChainByReference(
     vault.getSupportedChains()
   );
@@ -736,9 +723,10 @@ export const VaultWithdrawScreen = () => {
       return;
     }
 
-    const validationError = getAddressValidationError({
+    const validationError = getWithdrawDestinationError({
       destination: trimmedManualDestination,
-      namespace: selectedAccount.chainId.namespace
+      namespace: selectedAccount.chainId.namespace,
+      sourceAddress: selectedAccount.address
     });
     if (validationError) {
       setAddressError(validationError);
@@ -799,6 +787,10 @@ export const VaultWithdrawScreen = () => {
   };
 
   const handleConfirmWithdraw = async () => {
+    if (isWithdrawSubmittingRef.current) {
+      return;
+    }
+    isWithdrawSubmittingRef.current = true;
     goToStep('loading');
 
     const result = await attempt(() =>
@@ -806,6 +798,7 @@ export const VaultWithdrawScreen = () => {
     );
 
     if ('error' in result) {
+      isWithdrawSubmittingRef.current = false;
       setWithdrawError(mapWithdrawError(result.error));
       goToStep('error');
       return;

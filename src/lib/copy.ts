@@ -37,8 +37,14 @@ export const vaultCardCopy = {
   tokenSingular: '1 Token',
   tokenPlural: (count: number) => `${count} Tokens`,
   burnedTag: 'BURNED',
+  pendingTag: 'PENDING',
   unavailable: '--'
 };
+
+export const pendingDepositCopy = {
+  detail: (amount: string) =>
+    `${amount} pending · waiting for network confirmation`
+} as const;
 
 export const vaultDetailCopy = {
   safeBadge: 'SAFE',
@@ -125,6 +131,8 @@ export const withdrawFlowCopy = {
   reviewBitcoinMinerFeeLabel: 'Bitcoin miner fee',
   reviewEthereumGasFeeLabel: 'Ethereum gas fee',
   reviewTestnetWarning: 'Testnet coins have no monetary value.',
+  invalidBitcoinDestination:
+    'This is not a valid Bitcoin testnet address. Go back and check it.',
   reviewAddressLabel: (chainName: string) => `${chainName} Address`,
   cancelAction: 'CANCEL',
   confirmAction: 'CONFIRM',

@@ -4,11 +4,12 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import packageJson from './package.json';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { attempt } from './src/lib/attempt';
 import type { BuildMetadata } from './src/lib/build-metadata';
+import { buildContentSecurityPolicy } from './src/lib/content-security-policy';
 
 const unknownBuildMetadataValue = 'unknown';
 const unresolvedBuildMetadataValue = 'unresolved';
@@ -70,6 +71,24 @@ export default defineConfig(({ command, isPreview, mode }) => {
     ]
   });
 
+  // Build-only: the dev server needs inline scripts and a websocket for HMR.
+  const contentSecurityPolicyPlugin: Plugin = {
+    name: 'content-security-policy',
+    apply: 'build',
+    transformIndexHtml: () => [
+      {
+        tag: 'meta',
+        attrs: {
+          'http-equiv': 'Content-Security-Policy',
+          content: buildContentSecurityPolicy(
+            loadEnv(mode, process.cwd(), 'VITE_')
+          )
+        },
+        injectTo: 'head-prepend'
+      }
+    ]
+  };
+
   return {
     plugins: [
       react({
@@ -79,12 +98,14 @@ export default defineConfig(({ command, isPreview, mode }) => {
       }),
       fontAssetsPlugin,
       tailwindcss(),
-      nodePolyfills()
+      nodePolyfills(),
+      contentSecurityPolicyPlugin
     ],
     build: {
       outDir: mode === 'production' ? 'dist' : 'build',
       minify: mode === 'production',
-      sourcemap: mode === 'production' ? 'hidden' : false,
+      // Maps would ship inside the iOS app bundle.
+      sourcemap: false,
       rollupOptions: {
         input: {
           main: './index.html'

@@ -3,6 +3,7 @@ import {
   type AnimateScreenOptions
 } from '@/components/animate-screen';
 import { useAppLifecycleLock } from '@/hooks/use-app-lifecycle-lock';
+import { useAutoBalanceRefresh } from '@/hooks/use-auto-balance-refresh';
 import { ScreenContext } from '@/hooks/use-screen';
 import { useSessionTimeout } from '@/hooks/use-session-timeout';
 import { attempt } from '@/lib/attempt';
@@ -45,7 +46,7 @@ export const ScreenProvider = () => {
   const [animateScreenOptions, setAnimateScreenOptions] =
     useState<AnimateScreenOptions>(defaultAnimationOptions);
 
-  const { vault, initWallet, clearWalletState } = useWallet();
+  const { vault, initWallet, clearWalletState, refreshBalances } = useWallet();
   const walletBootQuery = useWalletBootQuery({
     initWallet,
     isEnabled: shouldRunHydration,
@@ -91,6 +92,12 @@ export const ScreenProvider = () => {
 
   useAppLifecycleLock({
     onLock: () => void handleSessionEnd()
+  });
+
+  useAutoBalanceRefresh({
+    activeScreen: navigationState.activeScreen,
+    isVaultUnlocked: () => vault.isUnlocked(),
+    refreshBalances
   });
 
   useEffect(() => {

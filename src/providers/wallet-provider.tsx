@@ -27,7 +27,8 @@ import {
 } from '@/providers/safe-account-repair';
 import {
   assertWithdrawalResultIdentity,
-  failedWithdrawalErrorMessage
+  failedWithdrawalErrorMessage,
+  runExclusiveWithdrawal
 } from '@/providers/withdrawal-result';
 import {
   buildLatestWithdrawalRecordByAccountId,
@@ -56,7 +57,10 @@ import {
   ETHEREUM_SEPOLIA_CAIP,
   ETHEREUM_SEPOLIA_CHAIN_ID
 } from '@/lib/network-ids';
-import { assertNoNonInterfaceAssetBalances } from '@/lib/vault-operations';
+import {
+  assertNoNonInterfaceAssetBalances,
+  assertWithdrawalFeeWithinLimit
+} from '@/lib/vault-operations';
 import {
   loadWalletSummary,
   useWalletSummaryQuery,
@@ -429,6 +433,9 @@ const WalletProviderReady = ({ vault, children }: WalletProviderReadyProps) => {
   const ensureDefaultAccountsInFlightRef =
     useRef<Promise<DefaultAccountRepairResult> | null>(null);
   const withdrawReconcileRequestIdRef = useRef(0);
+  const withdrawInFlightRef = useRef<Promise<WithdrawVaultFundsResult> | null>(
+    null
+  );
   const inFlightWithdrawalRecordIdsRef = useRef<Set<string>>(new Set());
   const settledWithdrawalRecordIdsRef = useRef<Set<string>>(new Set());
   const [sessionId, setSessionId] = useState(0);
@@ -1193,7 +1200,7 @@ const WalletProviderReady = ({ vault, children }: WalletProviderReadyProps) => {
     withdrawSyncState.status
   ]);
 
-  const withdrawVaultFunds = useCallback(
+  const executeVaultWithdrawal = useCallback(
     async (destinationAddress: string): Promise<WithdrawVaultFundsResult> => {
       if (!selectedAccount) {
         throw new Error('No account selected');
@@ -1212,6 +1219,11 @@ const WalletProviderReady = ({ vault, children }: WalletProviderReadyProps) => {
       }
 
       await assertNoNonInterfaceAssetBalances(vault, selectedAccount);
+      await assertWithdrawalFeeWithinLimit(
+        vault,
+        selectedAccount,
+        destinationAddress
+      );
       if (requestedSessionId !== sessionIdRef.current || !vault.isUnlocked()) {
         throw new Error('Wallet session changed during withdrawal');
       }
@@ -1317,6 +1329,15 @@ const WalletProviderReady = ({ vault, children }: WalletProviderReadyProps) => {
       startPostWithdrawReconciliation,
       vault
     ]
+  );
+
+  const withdrawVaultFunds = useCallback(
+    (destinationAddress: string): Promise<WithdrawVaultFundsResult> =>
+      runExclusiveWithdrawal({
+        inFlightRef: withdrawInFlightRef,
+        action: () => executeVaultWithdrawal(destinationAddress)
+      }),
+    [executeVaultWithdrawal]
   );
 
   const contextValue = useMemo(

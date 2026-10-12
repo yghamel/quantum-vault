@@ -13,6 +13,7 @@ import {
   resolveQueryErrorCategory,
   resolveQueryErrorMessage
 } from '@/modules/vaults/data/query-error-message';
+import { usePendingBitcoinDeposit } from '@/modules/vaults/data/use-pending-bitcoin-deposit';
 import {
   VaultDetailBalanceSection,
   VaultDetailHeader,
@@ -73,6 +74,8 @@ export const VaultDetailScreen = () => {
       navigate('home', { direction: 'back' });
     }
   });
+
+  const pendingDepositLabel = usePendingBitcoinDeposit(selectedAccount);
 
   useEffect(() => {
     setActiveTabId('funds');
@@ -163,6 +166,7 @@ export const VaultDetailScreen = () => {
         currency={currency}
         withdrawAvailability={withdrawAvailability}
         isDataUnavailable={vaultDetailQuery.isError}
+        pendingDepositLabel={pendingDepositLabel}
         onDeposit={() => navigate('receive')}
         onWithdraw={() => navigate('vault-withdraw')}
       />

@@ -54,6 +54,15 @@ export const vaultQueryKeys = {
       accountId,
       currency
     ] as const,
+  // Nested under accountData so balance refreshes also refetch it.
+  pendingDeposit: ({ sessionId, accountId }: QuerySessionAccountScope) =>
+    [
+      queryNamespace,
+      vaultQueryKeyDomains.accountData,
+      sessionId,
+      accountId,
+      'pending-deposit'
+    ] as const,
   accountActivitiesScope: ({ sessionId }: QuerySessionScope) =>
     [
       queryNamespace,

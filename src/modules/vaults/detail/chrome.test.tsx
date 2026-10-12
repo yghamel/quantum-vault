@@ -56,6 +56,32 @@ describe('shouldHideVaultDetailActions', () => {
 });
 
 describe('VaultDetailBalanceSection', () => {
+  it('shows an unconfirmed deposit under the balance', () => {
+    const html = renderToStaticMarkup(
+      <VaultDetailBalanceSection
+        vaultData={{
+          assets: [],
+          balances: [],
+          activities: [],
+          onChainVaultStatus: 'safe',
+          totalCurrencyValue: 0
+        }}
+        vaultState='safe'
+        lifecycleKind='safe'
+        currency='usd'
+        withdrawAvailability={{ kind: 'hidden' }}
+        pendingDepositLabel='+0.005 BTC'
+        onDeposit={() => undefined}
+        onWithdraw={() => undefined}
+      />
+    );
+
+    expect(html).toContain('vault-pending-deposit');
+    expect(getTextContentFromMarkup(html)).toContain(
+      '+0.005 BTC pending · waiting for network confirmation'
+    );
+  });
+
   it('renders stable vulnerable withdraw copy without tab-dependent state', () => {
     const html = renderToStaticMarkup(
       <VaultDetailBalanceSection

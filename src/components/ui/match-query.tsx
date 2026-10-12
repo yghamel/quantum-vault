@@ -18,6 +18,8 @@ export const MatchQuery = <TData, TError>({
 }: MatchQueryProps<TData, TError>) =>
   match(value.status, {
     pending: loading,
-    error: () => error?.() ?? null,
+    // A failed background refetch keeps the last good data on screen.
+    error: () =>
+      value.data === undefined ? (error?.() ?? null) : success(value.data),
     success: () => success(ensurePresent(value.data, 'query.data'))
   });

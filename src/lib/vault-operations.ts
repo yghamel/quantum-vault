@@ -6,6 +6,7 @@ import {
 } from '@/lib/utils';
 import {
   EvmAccountClient,
+  InvalidDestinationAddressError,
   formatUnits,
   type Asset,
   type BalanceResult,
@@ -25,6 +26,7 @@ export type SummaryState =
   | { status: 'loading' }
   | { status: 'ready'; items: SummaryItem[]; estimatedFee: string | null }
   | { status: 'unsupported-assets' }
+  | { status: 'invalid-destination' }
   | { status: 'empty' }
   | { status: 'error' };
 
@@ -43,18 +45,10 @@ type VaultOperationsVault = {
   ): Promise<VaultOperationsAccountClient>;
 };
 
-// Matches KERNEL_MAX_FEE_PER_GAS = parseGwei('0.001') in libqc
-export const KERNEL_MAX_FEE_PER_GAS_WEI = 1_000_000n;
-
 /**
- * Computes a conservative fee ceiling for an EVM vault-emptying operation.
- *
- * Sums all gas limit fields from the provided `GasCostEstimate`
- * (callGasLimit + preVerificationGas + verificationGasLimit +
- * paymasterVerificationGasLimit + paymasterPostOpGasLimit) and multiplies
- * the total by `KERNEL_MAX_FEE_PER_GAS_WEI`. The constant corresponds to
- * `KERNEL_MAX_FEE_PER_GAS = parseGwei('0.001')` in libqc, so the result
- * errs on the high side rather than under-estimating.
+ * Worst-case fee for an EVM vault-emptying operation: every gas limit field
+ * times the live bundler `maxFeePerGas`, the same reservation libqc's
+ * `emptyVault` deducts before sweeping.
  */
 export const computeFeeCost = (estimate: GasCostEstimate): bigint => {
   const units =
@@ -63,7 +57,7 @@ export const computeFeeCost = (estimate: GasCostEstimate): bigint => {
     estimate.verificationGasLimit +
     (estimate.paymasterVerificationGasLimit ?? 0n) +
     (estimate.paymasterPostOpGasLimit ?? 0n);
-  return KERNEL_MAX_FEE_PER_GAS_WEI * units;
+  return estimate.maxFeePerGas * units;
 };
 
 export const hasBitcoinWithdrawFeeEstimateCapability = (
@@ -73,6 +67,84 @@ export const hasBitcoinWithdrawFeeEstimateCapability = (
   accountClient !== null &&
   'estimateEmptyVaultFee' in accountClient &&
   typeof accountClient.estimateEmptyVaultFee === 'function';
+
+/**
+ * libqc trusts the provider's fee rate (Esplora) or gas price (bundler) with
+ * no ceiling, so a sweep is refused when its fee would exceed this share of
+ * the native balance.
+ */
+export const maxWithdrawFeeSharePercent = 50n;
+
+export class WithdrawalFeeTooHighError extends Error {
+  constructor() {
+    super('The network fee is unusually high for this balance.');
+    this.name = 'WithdrawalFeeTooHighError';
+  }
+}
+
+export const isWithdrawalFeeWithinLimit = ({
+  fee,
+  nativeBalance
+}: {
+  fee: bigint;
+  nativeBalance: bigint;
+}): boolean =>
+  fee >= 0n &&
+  nativeBalance > 0n &&
+  fee * 100n <= nativeBalance * maxWithdrawFeeSharePercent;
+
+const estimateNativeWithdrawFee = async (
+  accountClient: unknown,
+  destination: string
+): Promise<bigint | undefined> => {
+  if (accountClient instanceof EvmAccountClient) {
+    return computeFeeCost(
+      await accountClient.getTransferGasCostEstimate(
+        1n as TransactionValue,
+        destination as EvmAddress
+      )
+    );
+  }
+  if (hasBitcoinWithdrawFeeEstimateCapability(accountClient)) {
+    return accountClient.estimateEmptyVaultFee(destination);
+  }
+  return undefined;
+};
+
+/**
+ * Re-estimates the sweep fee from live provider data right before broadcast
+ * and throws {@link WithdrawalFeeTooHighError} when it is out of bounds.
+ * Estimation failures propagate so the withdrawal fails closed.
+ */
+export const assertWithdrawalFeeWithinLimit = async (
+  vault: VaultOperationsVault,
+  account: PersistedAccount,
+  destination: string
+): Promise<void> => {
+  const accountClient = await vault.getAccount(account.id);
+  const nativeAsset = getInterfaceAssets(await accountClient.listAssets()).find(
+    isNativeAsset
+  );
+  if (!nativeAsset) {
+    return;
+  }
+
+  const [nativeBalance] = await accountClient.getBalances([nativeAsset]);
+  if (nativeBalance === undefined || nativeBalance.balance === 0n) {
+    return;
+  }
+
+  const fee = await estimateNativeWithdrawFee(accountClient, destination);
+  if (fee === undefined) {
+    throw new Error('Withdrawal fee cannot be estimated for this vault');
+  }
+
+  if (
+    !isWithdrawalFeeWithinLimit({ fee, nativeBalance: nativeBalance.balance })
+  ) {
+    throw new WithdrawalFeeTooHighError();
+  }
+};
 
 export class NonInterfaceAssetBalanceError extends Error {
   constructor() {
@@ -187,6 +259,11 @@ export const loadVaultWithdrawSummary = async (
       const fee = await accountClient.estimateEmptyVaultFee(destination);
       estimatedFee = `~${formatUnits(fee, nativeItem.asset.decimals)} ${nativeItem.asset.symbol}`;
     } catch (error) {
+      // libqc validates the address against the vault's network here; the
+      // UI has no Bitcoin address parser of its own.
+      if (error instanceof InvalidDestinationAddressError) {
+        return { status: 'invalid-destination' };
+      }
       console.error('Failed to estimate Bitcoin withdrawal fee:', error);
       estimatedFee = null;
     }

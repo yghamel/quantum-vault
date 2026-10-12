@@ -49,7 +49,13 @@ export const AccountScreen = () => {
   });
 
   useEffect(() => {
-    if (!accountDataQuery.isError || accountDataQuery.isFetching) return;
+    if (
+      !accountDataQuery.isError ||
+      accountDataQuery.isFetching ||
+      accountDataQuery.data !== undefined
+    ) {
+      return;
+    }
 
     const errorCategory = resolveQueryErrorCategory(accountDataQuery.error);
     toast.error(resolveQueryErrorMessage(accountDataQuery.error));
@@ -63,6 +69,7 @@ export const AccountScreen = () => {
     navigate('home', { direction: 'back' });
   }, [
     clearWalletState,
+    accountDataQuery.data,
     accountDataQuery.error,
     accountDataQuery.isError,
     accountDataQuery.isFetching,

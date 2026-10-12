@@ -29,13 +29,13 @@ vi.mock('@/modules/vaults/lifecycle/use-vault-lifecycle-accounts', () => ({
 }));
 
 const createVaultSnapshotsQuery = ({
-  data = {},
+  data,
   status = 'success'
 }: {
   data?: Record<string, VaultSnapshot>;
   status?: 'pending' | 'error' | 'success';
 } = {}) => ({
-  data,
+  data: data ?? (status === 'error' ? undefined : {}),
   error: status === 'error' ? new Error('snapshot query failed') : null,
   isError: status === 'error',
   isPending: status === 'pending',

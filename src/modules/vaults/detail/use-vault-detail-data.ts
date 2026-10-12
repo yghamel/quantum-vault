@@ -319,12 +319,15 @@ export const useVaultDetailData = ({
     const activitiesQueryHasData = activitiesQuery.data !== undefined;
     const shouldHandleActivitiesQueryError =
       activitiesQuery.isError && !activitiesQueryHasData;
+    // A failed background refresh keeps the last good data on screen.
+    const shouldHandleVaultDetailError =
+      vaultDetailQuery.isError && vaultDetailQuery.data === undefined;
     const shouldTriggerUnexpectedError =
       shouldTriggerVaultDetailUnexpectedError({
         activitiesQueryIsError: shouldHandleActivitiesQueryError,
         hasHandledError: hasHandledErrorRef.current,
         shouldLoadActivities,
-        vaultDetailQueryIsError: vaultDetailQuery.isError
+        vaultDetailQueryIsError: shouldHandleVaultDetailError
       });
 
     if (!shouldTriggerUnexpectedError) {
@@ -332,7 +335,7 @@ export const useVaultDetailData = ({
     }
 
     const queryError = resolveVaultDetailQueryError({
-      vaultDetailIsError: vaultDetailQuery.isError,
+      vaultDetailIsError: shouldHandleVaultDetailError,
       vaultDetailError: vaultDetailQuery.error,
       activitiesIsError: shouldHandleActivitiesQueryError,
       activitiesError: activitiesQuery.error
@@ -346,6 +349,7 @@ export const useVaultDetailData = ({
     activitiesQuery.isError,
     activitiesQuery.data,
     shouldLoadActivities,
+    vaultDetailQuery.data,
     vaultDetailQuery.error,
     vaultDetailQuery.isError
   ]);

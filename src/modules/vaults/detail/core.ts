@@ -398,10 +398,13 @@ export const resolveWithdrawAvailability = ({
     };
   }
 
-  const nativeAsset = ensurePresent(
-    getNativeAssetMetadata(assets),
-    'native asset metadata for withdraw availability'
-  );
+  // libqc only tracks native assets it has a CAIP entity for on this chain
+  // (e.g. none for Sepolia ETH), so an absent native asset has no balance.
+  const nativeAsset = getNativeAssetMetadata(assets);
+  if (nativeAsset === undefined) {
+    return { kind: 'hidden' };
+  }
+
   const nativeBalance = ensurePresent(
     buildBalanceBySymbol(balances)[nativeAsset.symbol],
     `native asset balance for ${nativeAsset.symbol}`

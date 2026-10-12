@@ -103,7 +103,8 @@ export const HomeScreen = () => {
   });
   const vaultSnapshotByAccountId = vaultSnapshotsQuery.data ?? {};
   const isVaultSnapshotLoading = vaultSnapshotsQuery.isPending;
-  const isVaultSnapshotError = vaultSnapshotsQuery.isError;
+  const isVaultSnapshotError =
+    vaultSnapshotsQuery.isError && vaultSnapshotsQuery.data === undefined;
 
   const accountChainByReference = buildAccountChainByReference(
     vault.getSupportedChains()

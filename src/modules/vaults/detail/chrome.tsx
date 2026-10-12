@@ -1,5 +1,9 @@
 import { cn, shortenAddress } from '@/lib/utils';
-import { vaultAlertCopy, vaultDetailCopy } from '@/lib/copy';
+import {
+  pendingDepositCopy,
+  vaultAlertCopy,
+  vaultDetailCopy
+} from '@/lib/copy';
 import { toastMessages } from '@/lib/content';
 import type { CurrencyCode } from '@/lib/currency';
 import { match } from '@/lib/match';
@@ -185,6 +189,7 @@ type VaultDetailBalanceSectionProps = {
   currency: CurrencyCode;
   withdrawAvailability: WithdrawAvailability;
   isDataUnavailable?: boolean;
+  pendingDepositLabel?: string;
   onDeposit(): void;
   onWithdraw(): void;
 };
@@ -196,6 +201,7 @@ export const VaultDetailBalanceSection = ({
   currency,
   withdrawAvailability,
   isDataUnavailable = false,
+  pendingDepositLabel,
   onDeposit,
   onWithdraw
 }: VaultDetailBalanceSectionProps) => {
@@ -229,6 +235,14 @@ export const VaultDetailBalanceSection = ({
           <Skeleton className='h-9 w-40' />
         )}
       </p>
+      {pendingDepositLabel !== undefined ? (
+        <p
+          data-testid='vault-pending-deposit'
+          className='type-footnote m-0 mt-1 text-warning'
+        >
+          {pendingDepositCopy.detail(pendingDepositLabel)}
+        </p>
+      ) : null}
 
       <VaultDetailActions
         lifecycleKind={lifecycleKind}

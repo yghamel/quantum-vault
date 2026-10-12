@@ -627,8 +627,8 @@ describe('vault detail core', () => {
       }
     );
 
-    it('throws when native asset metadata is missing', () => {
-      expect(() =>
+    it('hides withdraw when the chain has no tracked native asset', () => {
+      expect(
         resolveWithdrawAvailability({
           selectedChainNamespace: evmChainNamespace,
           assets: [],
@@ -637,7 +637,7 @@ describe('vault detail core', () => {
           hasNonInterfaceAssetBalance: false,
           nonInterfaceAssetMessage: 'Unsupported token balances are present.'
         })
-      ).toThrow('native asset metadata for withdraw availability');
+      ).toEqual({ kind: 'hidden' });
     });
 
     it('throws when native asset balance is missing', () => {

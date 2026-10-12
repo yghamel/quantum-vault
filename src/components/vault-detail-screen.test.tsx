@@ -34,6 +34,10 @@ vi.mock('@/modules/vaults/detail/use-vault-detail-data', () => ({
   useVaultDetailData: useVaultDetailDataMock
 }));
 
+vi.mock('@/modules/vaults/data/use-pending-bitcoin-deposit', () => ({
+  usePendingBitcoinDeposit: () => undefined
+}));
+
 vi.mock('@/modules/vaults/shared/use-manual-balance-refresh', () => ({
   useManualBalanceRefresh: useManualBalanceRefreshMock
 }));

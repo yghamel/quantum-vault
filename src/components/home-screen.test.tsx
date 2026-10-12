@@ -30,6 +30,10 @@ vi.mock('@/modules/vaults/data/hooks', () => ({
   useVaultAccountSnapshotsQuery: useVaultAccountSnapshotsQueryMock
 }));
 
+vi.mock('@/modules/vaults/data/use-pending-bitcoin-deposit', () => ({
+  usePendingBitcoinDeposit: () => undefined
+}));
+
 vi.mock('@/modules/vaults/shared/use-manual-balance-refresh', () => ({
   useManualBalanceRefresh: useManualBalanceRefreshMock
 }));
@@ -86,13 +90,13 @@ const createWithdrawalRecord = ({
 const stripTags = (html: string): string => html.replace(/<[^>]*>/g, '');
 
 const createVaultSnapshotsQuery = ({
-  data = {},
+  data,
   status = 'success'
 }: {
   data?: Record<string, VaultSnapshot>;
   status?: 'pending' | 'error' | 'success';
 } = {}) => ({
-  data,
+  data: data ?? (status === 'error' ? undefined : {}),
   error: status === 'error' ? new Error('snapshot query failed') : null,
   isError: status === 'error',
   isPending: status === 'pending',
@@ -272,5 +276,16 @@ describe('HomeScreen', () => {
 
     expect(text).toContain('TOTAL BALANCE--');
     expect(text).toContain('Unable to load vault balances.');
+  });
+
+  it('keeps the last balances when a background refresh fails', () => {
+    useVaultAccountSnapshotsQueryMock.mockReturnValue(
+      createVaultSnapshotsQuery({ status: 'error', data: {} })
+    );
+
+    const text = stripTags(renderHome());
+
+    expect(text).not.toContain('TOTAL BALANCE--');
+    expect(text).not.toContain('Unable to load vault balances.');
   });
 });
