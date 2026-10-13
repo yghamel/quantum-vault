@@ -10,7 +10,7 @@
 import type { WithdrawDisabledMessageByNamespace } from '@/modules/vaults/detail/core';
 
 export const homeCopy = {
-  title: 'Quantum Vault',
+  title: 'Quantum Vault Wallet',
   totalBalanceLabel: 'TOTAL BALANCE',
   depositAction: 'Deposit',
   withdrawAction: 'Withdraw',
@@ -30,6 +30,10 @@ export const homeCopy = {
   syncStateFailedBody:
     'Withdrawal failed after submission. Review activity and retry if needed.',
   syncStateDismissAria: 'Dismiss withdrawal sync notice',
+  interruptedWithdrawalTitle: 'Wallet locked during a withdrawal',
+  interruptedWithdrawalBody:
+    'Your wallet locked while a withdrawal was being sent. Open the vault and check its activity to see whether it went through before trying again.',
+  interruptedWithdrawalDismissAria: 'Dismiss interrupted withdrawal notice',
   vaultSnapshotsError: 'Unable to load vault balances.'
 };
 
@@ -48,6 +52,7 @@ export const pendingDepositCopy = {
 
 export const vaultDetailCopy = {
   safeBadge: 'SAFE',
+  unknownBadge: 'STATUS UNKNOWN',
   vulnerableBadge: 'VULNERABLE',
   withdrawnBadge: 'BURNED',
   totalBalanceLabel: 'TOTAL BALANCE',
@@ -71,9 +76,9 @@ export const vaultDetailCopy = {
 
 export const vaultDetailInsufficientWithdrawCopyByNamespace = {
   eip155:
-    'Insufficient balance to withdraw - remaining funds are below the estimated gas cost.',
+    'Insufficient balance to withdraw - withdrawals need at least 0.001 ETH to cover the network fee.',
   bip122:
-    'Insufficient balance to withdraw - remaining funds are below the estimated transaction fee.'
+    'Insufficient balance to withdraw - withdrawals need at least 0.000009 BTC (900 sats) to cover the network fee.'
 } as const satisfies WithdrawDisabledMessageByNamespace;
 
 export const vaultDetailUnsupportedAssetWithdrawCopy =
@@ -83,6 +88,9 @@ export const vaultAlertCopy = {
   safeTitle: 'Quantum protected',
   safeBody:
     'This vault has never sent a transaction, so its public key is hidden. It stays protected until you withdraw.',
+  unknownTitle: 'Status unknown',
+  unknownBody:
+    'This vault’s quantum status could not be checked. Do not deposit until it shows SAFE. Refresh to try again.',
   vulnerableTitle: 'Vulnerable',
   vulnerableBody:
     'This vault is vulnerable. Withdraw funds to a quantum safe vault.',
@@ -126,10 +134,21 @@ export const withdrawFlowCopy = {
   addAddressFieldLabel: (chainName: string) =>
     `Enter your ${chainName} withdrawal address:`,
   addAddressPlaceholder: '0x...',
-  reviewTitle: 'You will send',
+  addAddressBitcoinPlaceholder: 'tb1...',
+  reviewTitle: 'You are withdrawing',
+  reviewAssetsLabel: 'Vault balance',
   reviewToLegend: 'TO',
-  reviewBitcoinMinerFeeLabel: 'Bitcoin miner fee',
-  reviewEthereumGasFeeLabel: 'Ethereum gas fee',
+  reviewBitcoinMinerFeeLabel: 'Bitcoin network fee',
+  reviewEthereumGasFeeLabel: 'Ethereum network fee (max)',
+  reviewFeeUnavailable: 'Unable to estimate',
+  reviewRecipientReceivesLabel: 'Recipient receives',
+  reviewNoServiceFeeNotice:
+    'Quantum Vault Wallet charges no withdrawal fee. The blockchain network charges the network fee shown above.',
+  reviewEthereumMaxFeeNote:
+    'Ethereum reserves the maximum possible gas. Any unused part stays in this vault’s network deposit and is not sent to the recipient.',
+  reviewFeeUnavailableNotice:
+    'The network fee could not be estimated, so this withdrawal cannot be confirmed. Go back and try again.',
+  reviewPasswordLabel: 'Enter your password to confirm',
   reviewTestnetWarning: 'Testnet coins have no monetary value.',
   invalidBitcoinDestination:
     'This is not a valid Bitcoin testnet address. Go back and check it.',

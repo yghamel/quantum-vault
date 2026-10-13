@@ -43,6 +43,15 @@ const statusToConfig: Record<VaultStatus, VaultCardConfig> = {
     valueMutedClassName: 'text-footer-muted',
     iconClassName: ''
   },
+  unknown: {
+    rowSurfaceClassName: '',
+    titleClassName: 'text-foreground',
+    addressClassName: 'text-footer-muted',
+    tokenCountClassName: 'text-foreground',
+    valueClassName: 'text-foreground',
+    valueMutedClassName: 'text-footer-muted',
+    iconClassName: ''
+  },
   withdrawn: {
     rowSurfaceClassName: '',
     titleClassName: 'text-footer-muted/60',

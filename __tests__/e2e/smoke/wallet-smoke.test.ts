@@ -24,15 +24,12 @@ import {
   readRecoveryPhraseRevealPageWords,
   readCopiedClipboardText,
   recoverWalletAndOpenHome,
-  reloadAndUnlockIfNeeded,
-  returnFromExportKeysToSettings,
   settingsButtonName,
   TEST_USER_PASSWORD,
   unlockWalletIfPrompted
 } from '../helpers';
 
-const wordsPerRecoveryPhrasePage = 12;
-const nextRecoveryPhrasePageButtonName = /^NEXT$/i;
+const recoveryPhraseWordCount = 24;
 const continueButtonName = /^Continue$/i;
 
 const expectInvalidPasswordToast = async (page: Page): Promise<void> => {
@@ -44,24 +41,13 @@ const expectInvalidPasswordToast = async (page: Page): Promise<void> => {
   ).toBeVisible();
 };
 
-const expectCopiedRecoveryPhrase = async ({
-  page,
-  expectedWords
-}: {
-  page: Page;
-  expectedWords: readonly string[];
-}): Promise<void> => {
-  const copiedText = await readCopiedClipboardText(page);
-  if (copiedText === null) {
-    throw new Error('Expected recovery phrase to be copied');
-  }
-
-  const copiedWords = copiedText.split(' ');
-  expect(copiedWords).toHaveLength(expectedWords.length);
-
-  expectedWords.forEach((word, index) => {
-    expect(copiedWords[index]).toBe(word);
-  });
+const lockWalletFromSettings = async (page: Page): Promise<void> => {
+  await page.getByTestId('lock-wallet-button').click();
+  await expect(
+    page.getByRole('heading', { name: 'Lock Wallet' })
+  ).toBeVisible();
+  await page.getByRole('button', { name: settingsButtonName.lockNow }).click();
+  await expect(page.getByRole('button', { name: 'Unlock' })).toBeVisible();
 };
 
 test.describe('wallet smoke @smoke', () => {
@@ -108,21 +94,13 @@ test.describe('wallet smoke @smoke', () => {
     await createWalletAndOpenHome({ page });
 
     await openSettingsScreen(page);
-    await page.getByTestId('lock-wallet-button').click();
-    await expect(
-      page.getByRole('heading', { name: 'Lock Wallet' })
-    ).toBeVisible();
-    await page
-      .getByRole('button', { name: settingsButtonName.lockNow })
-      .click();
-
-    await expect(page.getByRole('button', { name: 'Unlock' })).toBeVisible();
+    await lockWalletFromSettings(page);
 
     await unlockWalletIfPrompted(page, TEST_USER_PASSWORD);
     await expectHomeVisible(page);
   });
 
-  test('persists selected currency and shows the active checkmark', async ({
+  test('keeps the selected currency across lock and unlock', async ({
     page
   }) => {
     await createWalletAndOpenHome({ page });
@@ -143,7 +121,9 @@ test.describe('wallet smoke @smoke', () => {
     await clickActiveBackButton(page);
     await expectHomeVisible(page);
 
-    await reloadAndUnlockIfNeeded(page);
+    await openSettingsScreen(page);
+    await lockWalletFromSettings(page);
+    await unlockWalletIfPrompted(page, TEST_USER_PASSWORD);
     await expectHomeVisible(page);
     await openSettingsScreen(page);
     await openSettingsSubScreen({
@@ -179,7 +159,7 @@ test.describe('wallet smoke @smoke', () => {
     await expectHomeVisible(page);
   });
 
-  test('exports keys after password gate with reveal, copy, and paging', async ({
+  test('exports keys after the password gate without touching the clipboard', async ({
     page
   }) => {
     await installClipboardMock(page);
@@ -209,53 +189,18 @@ test.describe('wallet smoke @smoke', () => {
       .getByRole('button', { name: settingsButtonName.revealKeys })
       .click();
     await expect(page.getByTestId(exportSecretPhraseTestId)).toBeVisible();
-    const firstPageWords = await readRecoveryPhraseRevealPageWords({
+    const revealedWords = await readRecoveryPhraseRevealPageWords({
       page,
       secretPhraseTestId: exportSecretPhraseTestId
     });
-    expect(firstPageWords).toHaveLength(wordsPerRecoveryPhrasePage);
+    expect(revealedWords).toHaveLength(recoveryPhraseWordCount);
     await expect(
       page.getByRole('button', { name: settingsButtonName.copy })
     ).toHaveCount(0);
 
-    await page
-      .getByRole('button', { name: nextRecoveryPhrasePageButtonName })
-      .click();
-    const secondPageWords = await readRecoveryPhraseRevealPageWords({
-      page,
-      secretPhraseTestId: exportSecretPhraseTestId
-    });
-    expect(secondPageWords).toHaveLength(wordsPerRecoveryPhrasePage);
-
-    const visibleWords = [...firstPageWords, ...secondPageWords];
-    expect(visibleWords).toHaveLength(24);
-
-    const missingRecoveryPhraseToast = page
-      .locator('[data-sonner-toast]')
-      .filter({
-        hasText: 'Recovery phrase is unavailable in this session.'
-      });
-
-    await expect(
-      page.getByRole('button', { name: /^PREVIOUS$/i })
-    ).toBeHidden();
-
-    await page.getByRole('button', { name: settingsButtonName.copy }).click();
-    await expectCopiedToClipboardToast(page);
-    await expectCopiedRecoveryPhrase({ page, expectedWords: visibleWords });
-
-    await page.getByRole('button', { name: 'BACK', exact: true }).click();
-    const previousPageWords = await readRecoveryPhraseRevealPageWords({
-      page,
-      secretPhraseTestId: exportSecretPhraseTestId
-    });
-    expect(previousPageWords).toHaveLength(firstPageWords.length);
-    firstPageWords.forEach((word, index) => {
-      expect(previousPageWords[index]).toBe(word);
-    });
-
-    await returnFromExportKeysToSettings(page);
-    await expect(missingRecoveryPhraseToast).toHaveCount(0, { timeout: 500 });
+    await page.getByTestId('confirm-recovery-phrase-written').click();
+    await expectSettingsScreenVisible(page);
+    expect(await readCopiedClipboardText(page)).toBe('');
   });
 
   test('deletes quantum vault and returns to the initial state', async ({
@@ -269,14 +214,29 @@ test.describe('wallet smoke @smoke', () => {
       actionName: settingsButtonName.deleteQuantumVault,
       screenName: 'Delete Quantum Vault'
     });
+    await page.getByTestId('confirm-delete-wallet-button').click();
+    await expect(page.getByText('Password is required.')).toBeVisible();
+
     await page
-      .getByRole('button', { name: settingsButtonName.deleteQuantumVault })
-      .click();
+      .getByLabel('Enter your password to confirm')
+      .fill('Wrong12345678!');
+    await page.getByTestId('confirm-delete-wallet-button').click();
+    await expect(page.getByText('Incorrect password.')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Delete Quantum Vault' })
+    ).toBeVisible();
+
+    await page
+      .getByLabel('Enter your password to confirm')
+      .fill(TEST_USER_PASSWORD);
+    await page.getByTestId('confirm-delete-wallet-button').click();
 
     await expectInitialEntryVisible(page);
   });
 
-  test('shows formatted libqc export error when recovery phrase storage is missing', async ({
+  // The web build keeps vault storage in memory only, so the test cannot
+  // remove a stored key from outside the app.
+  test.skip('shows formatted libqc export error when recovery phrase storage is missing', async ({
     page
   }) => {
     await createWalletAndOpenHome({ page });
@@ -344,14 +304,12 @@ test.describe('wallet smoke @smoke', () => {
     await page.getByRole('button', { name: 'Bitcoin' }).first().click();
     await expect(
       page.locator(
-        '[data-testid="receive-selected-address"][data-address^="bc1"]'
+        '[data-testid="receive-selected-address"][data-address^="tb1"]'
       )
     ).toBeVisible();
 
     await page.getByTestId('back-button').click();
     await page.getByTestId('back-button').click();
-
-    await reloadAndUnlockIfNeeded(page);
     await expectHomeVisible(page);
   });
 

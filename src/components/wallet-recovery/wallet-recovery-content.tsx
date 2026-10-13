@@ -8,9 +8,11 @@ import { CreatingWalletLoader } from '@/components/shared/creating-wallet-loader
 import { useBoolean } from '@/hooks/use-boolean';
 import { useScreen } from '@/hooks/use-screen';
 import { useStepNavigation } from '@/hooks/use-step-navigation';
+import { useWallet } from '@/hooks/use-wallet';
 import { attempt } from '@/lib/attempt';
 import { toastMessages } from '@/lib/content';
 import { zeroOut } from '@/lib/utils';
+import { useHasPasswordQuery } from '@/providers/wallet-queries';
 import { LibQC } from '@project-eleven/libqc';
 import { AnimatePresence } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
@@ -23,7 +25,8 @@ import {
   forwardFadeAnimateOptions,
   forwardSlideAnimateOptions,
   recoveryCancelModalCopy,
-  recoveryLoaderMessage
+  recoveryLoaderMessage,
+  recoveryReplaceModalCopy
 } from './wallet-recovery-content.constants';
 import { useWalletRecoveryContext } from './wallet-recovery-context';
 import { getStepRenderers } from './wallet-recovery-step-renderers';
@@ -37,6 +40,10 @@ export const WalletRecoveryContent = () => {
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const passwordConfirmationInputRef = useRef<HTMLInputElement>(null);
   const [showCancelConfirmation, cancelConfirmation] = useBoolean();
+  const [showReplaceWarning, replaceWarning] = useBoolean();
+  const { vault } = useWallet();
+  const hasPasswordQuery = useHasPasswordQuery({ vault });
+  const hasExistingVault = hasPasswordQuery.data === true;
   const [animateScreenOptions, setAnimateScreenOptions] =
     useState<AnimateScreenOptions>(forwardSlideAnimateOptions);
 
@@ -85,6 +92,16 @@ export const WalletRecoveryContent = () => {
       return;
     }
 
+    if (hasExistingVault) {
+      replaceWarning.set();
+      return;
+    }
+
+    handleNext();
+  };
+
+  const handleReplaceConfirm = () => {
+    replaceWarning.unset();
     handleNext();
   };
 
@@ -167,6 +184,14 @@ export const WalletRecoveryContent = () => {
         isConfirmDisabled={walletRecovery.isRecovering}
         title={recoveryCancelModalCopy.title}
         description={recoveryCancelModalCopy.description}
+      />
+
+      <CancelConfirmationModal
+        open={showReplaceWarning}
+        onConfirm={handleReplaceConfirm}
+        onDismiss={replaceWarning.unset}
+        title={recoveryReplaceModalCopy.title}
+        description={recoveryReplaceModalCopy.description}
       />
     </>
   );

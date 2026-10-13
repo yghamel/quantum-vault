@@ -46,9 +46,14 @@ describe('network safety + libqc pin', () => {
     }
     expect(readFileSync('.env.example', 'utf8')).not.toMatch(/TREASURY/);
     expect(withdrawFlowCopy.reviewBitcoinMinerFeeLabel).toBe(
-      'Bitcoin miner fee'
+      'Bitcoin network fee'
     );
-    expect(withdrawFlowCopy.reviewEthereumGasFeeLabel).toBe('Ethereum gas fee');
+    expect(withdrawFlowCopy.reviewEthereumGasFeeLabel).toBe(
+      'Ethereum network fee (max)'
+    );
+    expect(withdrawFlowCopy.reviewNoServiceFeeNotice).toMatch(
+      /charges no withdrawal fee/
+    );
   });
 
   it('does not silently fall back CapacitorLibQCStorage to localStorage on web/tests', async () => {

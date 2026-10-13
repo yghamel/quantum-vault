@@ -8,7 +8,7 @@ const App = () => {
       <Toaster position='top-left' duration={3000} />
       <PrivacyCover />
 
-      <div className='relative h-full w-full max-w-full overflow-hidden overscroll-none bg-background pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]'>
+      <div className='relative mx-auto h-full w-full max-w-xl overflow-hidden overscroll-none bg-background pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]'>
         <ScreenProvider />
       </div>
     </>

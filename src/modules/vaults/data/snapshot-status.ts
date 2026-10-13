@@ -8,6 +8,7 @@ export const resolveSnapshotWithStickyStatus = ({
   next: VaultSnapshot;
   previousStatus: VaultStatus | null | undefined;
 }): VaultSnapshot => {
-  const stickyStatus: VaultStatus = next.status ?? previousStatus ?? 'safe';
+  const stickyStatus: VaultStatus | null =
+    next.status ?? previousStatus ?? null;
   return { ...next, status: stickyStatus };
 };

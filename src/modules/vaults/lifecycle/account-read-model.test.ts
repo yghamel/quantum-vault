@@ -63,6 +63,7 @@ describe('vault lifecycle account read model', () => {
   it('keeps lifecycle policy exhaustive by lifecycle kind', () => {
     expect(lifecyclePolicyByKind).toEqual({
       safe: { depositEligible: true, homeStatus: 'safe' },
+      unknown: { depositEligible: false, homeStatus: 'unknown' },
       vulnerable: { depositEligible: false, homeStatus: 'vulnerable' },
       pending: { depositEligible: false, homeStatus: 'withdrawn' },
       sent: { depositEligible: false, homeStatus: 'withdrawn' },
@@ -119,6 +120,12 @@ describe('vault lifecycle account read model', () => {
     expect(
       readModel.depositEligibleAccounts.map(({ accountId }) => accountId)
     ).toEqual(['safe-account']);
+    expect(
+      readModel.accountsByHomeStatus.unknown.map(({ id }) => id.toString())
+    ).toEqual(['null-status-account']);
+    expect(
+      readModel.accountsByHomeStatus.safe.map(({ id }) => id.toString())
+    ).not.toContain('null-status-account');
   });
 
   it('uses withdrawal records over safe snapshots for deposit eligibility', () => {

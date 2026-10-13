@@ -5,9 +5,14 @@ import {
 import { useAppLifecycleLock } from '@/hooks/use-app-lifecycle-lock';
 import { useAutoBalanceRefresh } from '@/hooks/use-auto-balance-refresh';
 import { ScreenContext } from '@/hooks/use-screen';
-import { useSessionTimeout } from '@/hooks/use-session-timeout';
+import {
+  isSessionTimeoutHeld,
+  useSessionTimeout
+} from '@/hooks/use-session-timeout';
 import { attempt } from '@/lib/attempt';
+import { markWithdrawalInterrupted } from '@/lib/interrupted-withdrawal';
 import { libqcVaultStorage } from '@/lib/libqc-vault-storage';
+import { hideNativeSplash } from '@/lib/native-splash';
 import { hasSeenOnboarding } from '@/lib/onboarding';
 import { useWalletBootQuery } from '@/providers/wallet-queries';
 import { useWallet } from '@/hooks/use-wallet';
@@ -70,6 +75,9 @@ export const ScreenProvider = () => {
   };
 
   const handleSessionEnd = async () => {
+    if (isSessionTimeoutHeld()) {
+      markWithdrawalInterrupted();
+    }
     clearWalletState();
     const hasPasswordResult = await attempt(() => vault.hasPassword());
     // An unreadable Keychain must not route a vault owner to Create, where a
@@ -151,6 +159,8 @@ export const ScreenProvider = () => {
     if (isLoading) {
       return;
     }
+
+    hideNativeSplash();
 
     const bootShellElement = document.getElementById('boot-shell');
 

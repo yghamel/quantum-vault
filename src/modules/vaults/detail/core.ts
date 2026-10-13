@@ -48,6 +48,10 @@ export const vaultStatusToCurrencyClassNames: Record<
     valueClassName: 'text-foreground',
     mutedValueClassName: 'text-footer-muted'
   },
+  unknown: {
+    valueClassName: 'text-foreground',
+    mutedValueClassName: 'text-footer-muted'
+  },
   vulnerable: {
     valueClassName: 'text-destructive',
     mutedValueClassName: 'text-destructive'
@@ -270,6 +274,7 @@ const sentSuccessIconKindByOnChainVaultStatus: Record<
   SuccessStateIconKind
 > = {
   safe: 'check',
+  unknown: 'check',
   vulnerable: 'withdraw-to-safe',
   withdrawn: 'check'
 };

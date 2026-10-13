@@ -13,6 +13,7 @@ import { isOneOf } from '@/lib/assert';
 
 export const vaultLifecycleKinds = [
   'safe',
+  'unknown',
   'vulnerable',
   'pending',
   'sent',
@@ -23,6 +24,7 @@ export type VaultLifecycleKind = (typeof vaultLifecycleKinds)[number];
 
 export const vaultLifecycleLabels: Record<VaultLifecycleKind, string> = {
   safe: 'Safe',
+  unknown: 'Status unknown',
   vulnerable: 'Vulnerable',
   pending: 'Transaction pending',
   sent: 'Withdrawal sent',

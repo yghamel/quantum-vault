@@ -1,4 +1,5 @@
 import { AlertTriangleIcon } from 'lucide-react';
+import { hideNativeSplash } from '@/lib/native-splash';
 import { useEffect } from 'react';
 import { Screen } from './screen';
 
@@ -19,6 +20,7 @@ type BootErrorScreenProps = { error: Error };
  */
 export function BootErrorScreen({ error }: BootErrorScreenProps) {
   useEffect(() => {
+    hideNativeSplash();
     const bootShellElement = document.getElementById('boot-shell');
     if (!bootShellElement) return;
     bootShellElement.dataset.state = 'hidden';
@@ -31,7 +33,9 @@ export function BootErrorScreen({ error }: BootErrorScreenProps) {
         <AlertTriangleIcon size={52} strokeWidth={0.8} />
         <div>
           <h1 className='text-[1.3rem]'>Configuration error</h1>
-          <p className='text-[0.85rem]'>Quantum Vault could not start.</p>
+          <p className='text-[0.85rem]'>
+            Quantum Vault Wallet could not start.
+          </p>
         </div>
       </div>
 

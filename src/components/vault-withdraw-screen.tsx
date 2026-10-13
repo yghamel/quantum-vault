@@ -1,5 +1,11 @@
+import { PasswordConfirmField } from '@/components/shared/password-confirm-field';
+import {
+  usePasswordConfirmation,
+  type PasswordConfirmation
+} from '@/components/shared/use-password-confirmation';
 import { useCurrency } from '@/hooks/use-currency';
 import { useScreen } from '@/hooks/use-screen';
+import { holdSessionTimeout } from '@/hooks/use-session-timeout';
 import { useWallet } from '@/hooks/use-wallet';
 import { ensurePresent } from '@/lib/assert';
 import { attempt } from '@/lib/attempt';
@@ -135,6 +141,7 @@ type ReviewStepProps = {
   confirmLabel: string;
   destinationAddress: string;
   isBitcoin: boolean;
+  passwordConfirmation: PasswordConfirmation;
   reviewSource: ReviewSource;
   suggestedVaultLabel: string | null;
   summaryState: SummaryState;
@@ -148,27 +155,35 @@ const ReviewStep = ({
   confirmLabel,
   destinationAddress,
   isBitcoin,
+  passwordConfirmation,
   reviewSource,
   suggestedVaultLabel,
   summaryState,
   onCancel,
   onConfirm
 }: ReviewStepProps) => {
-  const canConfirm = summaryState.status === 'ready';
   const estimatedFee =
     summaryState.status === 'ready' ? summaryState.estimatedFee : null;
+  const recipientAmount =
+    summaryState.status === 'ready' ? summaryState.recipientAmount : null;
+  const isFeeUnavailable =
+    summaryState.status === 'ready' && estimatedFee === null;
+  const canConfirm =
+    summaryState.status === 'ready' &&
+    estimatedFee !== null &&
+    !passwordConfirmation.isChecking;
 
   return (
     <div
       data-testid='withdraw-review-step'
-      className='mt-7 flex flex-1 min-h-0 flex-col justify-between'
+      className='mt-7 flex flex-1 min-h-0 flex-col justify-between overflow-y-auto'
     >
       <div>
         <h1 className='type-heading-lg m-0'>{withdrawFlowCopy.reviewTitle}</h1>
 
         <div className='mt-6 flex flex-col gap-2'>
           <p className='type-footnote m-0 text-footer-muted'>
-            Assets to withdraw
+            {withdrawFlowCopy.reviewAssetsLabel}
           </p>
           <AssetList chainIconUrl={chainIconUrl} summaryState={summaryState} />
         </div>
@@ -209,11 +224,46 @@ const ReviewStep = ({
           {summaryState.status === 'loading' ? (
             <Skeleton className='h-4 w-24' />
           ) : (
-            <p className='type-footnote m-0'>
-              {estimatedFee ?? 'Unable to estimate'}
+            <p data-testid='withdraw-review-fee' className='type-footnote m-0'>
+              {estimatedFee ?? withdrawFlowCopy.reviewFeeUnavailable}
             </p>
           )}
         </div>
+
+        {recipientAmount === null ? null : (
+          <div className='mt-2 flex items-center justify-between'>
+            <p className='type-footnote m-0'>
+              {withdrawFlowCopy.reviewRecipientReceivesLabel}
+            </p>
+            <p
+              data-testid='withdraw-review-recipient-amount'
+              className='type-footnote m-0'
+            >
+              {recipientAmount}
+            </p>
+          </div>
+        )}
+
+        {isFeeUnavailable ? (
+          <p
+            data-testid='withdraw-review-fee-unavailable'
+            className='type-footnote m-0 mt-3 text-destructive'
+          >
+            {withdrawFlowCopy.reviewFeeUnavailableNotice}
+          </p>
+        ) : null}
+
+        <p
+          data-testid='withdraw-review-no-service-fee'
+          className='type-footnote m-0 mt-3 text-muted-foreground'
+        >
+          {withdrawFlowCopy.reviewNoServiceFeeNotice}
+        </p>
+        {isBitcoin ? null : (
+          <p className='type-footnote m-0 mt-2 text-muted-foreground'>
+            {withdrawFlowCopy.reviewEthereumMaxFeeNote}
+          </p>
+        )}
 
         <AlertBanner
           data-testid='withdraw-burn-notice'
@@ -228,9 +278,20 @@ const ReviewStep = ({
         <p className='type-footnote m-0 mt-3 text-muted-foreground'>
           {withdrawFlowCopy.reviewTestnetWarning}
         </p>
+
+        {summaryState.status === 'ready' && estimatedFee !== null ? (
+          <div className='mt-5'>
+            <PasswordConfirmField
+              confirmation={passwordConfirmation}
+              label={withdrawFlowCopy.reviewPasswordLabel}
+              testId='withdraw-review-password'
+              onSubmit={onConfirm}
+            />
+          </div>
+        ) : null}
       </div>
 
-      <div className='flex flex-col gap-3'>
+      <div className='mt-5 flex flex-col gap-3'>
         <Button
           data-testid='confirm-withdraw-button'
           size='flow'
@@ -238,7 +299,11 @@ const ReviewStep = ({
           disabled={!canConfirm}
           onClick={onConfirm}
         >
-          {confirmLabel}
+          {passwordConfirmation.isChecking ? (
+            <Loader2Icon className='animate-spin' />
+          ) : (
+            confirmLabel
+          )}
         </Button>
         <Button
           data-testid='withdraw-review-cancel-button'
@@ -388,7 +453,9 @@ const AddAddressStep = ({
         id='destination-address'
         data-testid='destination-address-input'
         placeholder={
-          isBitcoin ? 'bc1...' : withdrawFlowCopy.addAddressPlaceholder
+          isBitcoin
+            ? withdrawFlowCopy.addAddressBitcoinPlaceholder
+            : withdrawFlowCopy.addAddressPlaceholder
         }
         value={destinationAddress}
         onChange={event => onAddressChange(event.target.value)}
@@ -606,6 +673,7 @@ export const VaultWithdrawScreen = () => {
   const summaryRequestIdRef = useRef(0);
   // The exiting review step stays clickable during its exit animation.
   const isWithdrawSubmittingRef = useRef(false);
+  const passwordConfirmation = usePasswordConfirmation();
   const accountChainByReference = buildAccountChainByReference(
     vault.getSupportedChains()
   );
@@ -791,11 +859,21 @@ export const VaultWithdrawScreen = () => {
       return;
     }
     isWithdrawSubmittingRef.current = true;
+
+    // A rejected password is reported inline by the password field.
+    const isPasswordConfirmed = await passwordConfirmation.verify();
+    if (!isPasswordConfirmed) {
+      isWithdrawSubmittingRef.current = false;
+      return;
+    }
+
+    const releaseSessionHold = holdSessionTimeout();
     goToStep('loading');
 
     const result = await attempt(() =>
       withdrawVaultFunds(trimmedDestinationAddress)
     );
+    releaseSessionHold();
 
     if ('error' in result) {
       isWithdrawSubmittingRef.current = false;
@@ -961,6 +1039,7 @@ export const VaultWithdrawScreen = () => {
                     confirmLabel={confirmLabel}
                     destinationAddress={trimmedDestinationAddress}
                     isBitcoin={isBitcoin}
+                    passwordConfirmation={passwordConfirmation}
                     reviewSource={reviewSource}
                     suggestedVaultLabel={
                       suggestedSafeDestination?.vaultLabel ?? null

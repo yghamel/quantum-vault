@@ -122,6 +122,16 @@ const lifecycleKindToBanner: Record<
       }
     ]
   },
+  unknown: {
+    tone: 'warning',
+    title: vaultAlertCopy.unknownTitle,
+    lines: [
+      {
+        id: 'unknown-banner-body',
+        text: vaultAlertCopy.unknownBody
+      }
+    ]
+  },
   vulnerable: {
     tone: 'danger',
     lines: [
@@ -281,6 +291,8 @@ const resolveVaultDetailActionsLayout = ({
   return match(vaultState, {
     safe: (): VaultDetailActionsLayout =>
       isWithdrawHidden ? 'deposit-only' : 'deposit-and-withdraw',
+    unknown: (): VaultDetailActionsLayout =>
+      isWithdrawHidden ? 'hidden' : 'single-withdraw',
     vulnerable: (): VaultDetailActionsLayout =>
       isWithdrawHidden ? 'hidden' : 'single-withdraw',
     withdrawn: (): VaultDetailActionsLayout =>
@@ -294,6 +306,7 @@ const WithdrawDisabledMessage = ({ message }: { message: string }) => (
 
 const singleWithdrawLabelByVaultState: Record<VaultStatus, string> = {
   safe: vaultDetailCopy.withdrawAction,
+  unknown: vaultDetailCopy.withdrawAction,
   vulnerable: vaultDetailCopy.withdrawToSafeAction,
   withdrawn: vaultDetailCopy.withdrawAction
 };

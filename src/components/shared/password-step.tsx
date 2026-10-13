@@ -25,7 +25,7 @@ type PasswordStepProps = {
 
 const passwordStepTitle = 'Create a Password';
 const passwordStepDescription =
-  "This password unlocks Quantum Vault on this device. It can't recover your wallet if you lose it.";
+  "This password unlocks Quantum Vault Wallet on this device. It can't recover your wallet if you lose it.";
 
 /**
  * Shared new-password step used by every flow that needs to collect a

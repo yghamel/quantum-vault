@@ -108,11 +108,12 @@ const resolveLifecycleWithoutWithdrawalRecord = ({
 
   const snapshotStatus = snapshot.status;
   if (snapshotStatus === null) {
-    return { kind: 'safe' };
+    return { kind: 'unknown' };
   }
 
   return match<VaultStatus, VaultLifecycleStatus>(snapshotStatus, {
     safe: () => ({ kind: 'safe' }),
+    unknown: () => ({ kind: 'unknown' }),
     vulnerable: () => ({
       kind: 'vulnerable',
       exposureReason: 'pubkey-exposed'

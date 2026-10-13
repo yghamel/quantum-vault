@@ -10,13 +10,14 @@ import { type VaultLifecycleKind } from './core';
  * imported directly at every consumer — there is no facade re-export here.
  *
  * `VaultLifecycleStatus` extends the SDK's lifecycle states with the
- * chrome-only `safe` / `vulnerable` kinds derived from snapshot status when
+ * chrome-only `safe` / `unknown` / `vulnerable` kinds derived from snapshot status when
  * no withdrawal record exists. Withdrawal record-backed variants carry
  * destination + txRefs; recovered recordless withdrawn vaults intentionally
  * keep that metadata null/empty instead of fabricating it.
  */
 export type VaultLifecycleStatus =
   | { kind: Extract<VaultLifecycleKind, 'safe'> }
+  | { kind: Extract<VaultLifecycleKind, 'unknown'> }
   | {
       kind: Extract<VaultLifecycleKind, 'vulnerable'>;
       exposureReason: 'pubkey-exposed';

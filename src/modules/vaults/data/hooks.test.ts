@@ -110,7 +110,7 @@ describe('resolveSnapshotWithStickyStatus', () => {
     expect(resolved.status).toBe('withdrawn');
   });
 
-  it('falls back to safe when both next and previous statuses are missing', () => {
+  it('stays unknown when both next and previous statuses are missing', () => {
     const resolved = resolveSnapshotWithStickyStatus({
       next: {
         isUnavailable: true,
@@ -121,7 +121,7 @@ describe('resolveSnapshotWithStickyStatus', () => {
       previousStatus: null
     });
 
-    expect(resolved.status).toBe('safe');
+    expect(resolved.status).toBe(null);
   });
 });
 

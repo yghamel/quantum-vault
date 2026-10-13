@@ -1,3 +1,5 @@
+import bitcoinIconUrl from '@/assets/chains/bitcoin.svg';
+import ethereumIconUrl from '@/assets/chains/ethereum.svg';
 import { BootErrorScreen } from '@/components/boot-error-screen';
 import { useCurrency } from '@/hooks/use-currency';
 import { WalletContext } from '@/hooks/use-wallet';
@@ -199,8 +201,7 @@ const buildChains = (): ChainSpecification[] => [
     }),
     name: 'Bitcoin Testnet4' as ChainName,
     network: 'bitcoin' as ChainNetwork,
-    iconUrl:
-      'https://assets.coingecko.com/coins/images/1/large/bitcoin.png' as IconUrl,
+    iconUrl: bitcoinIconUrl as IconUrl,
     nativeCurrency: {
       decimals: 8 as Decimals,
       name: 'Bitcoin' as AssetName,
@@ -217,8 +218,7 @@ const buildChains = (): ChainSpecification[] => [
     }),
     name: 'Ethereum Sepolia' as ChainName,
     network: 'sepolia' as ChainNetwork,
-    iconUrl:
-      'https://assets.coingecko.com/asset_platforms/images/279/large/ethereum.png' as IconUrl,
+    iconUrl: ethereumIconUrl as IconUrl,
     nativeCurrency: {
       decimals: 18 as Decimals,
       name: 'Sepolia ETH' as AssetName,

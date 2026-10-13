@@ -281,8 +281,34 @@ describe('vault operations', () => {
 
       expect(summary).toMatchObject({
         status: 'ready',
-        estimatedFee: `~${(200_000n * 1_000_000_000n).toString()} ETH`
+        estimatedFee: `~${(200_000n * 1_000_000_000n).toString()} ETH`,
+        recipientAmount: `~${(10n ** 18n - 200_000n * 1_000_000_000n).toString()} ETH`
       });
+    });
+
+    it('omits the recipient amount when the fee would consume the balance', async () => {
+      const ethereumAsset = createAsset('ETH');
+      const accountClient = Object.assign(new EvmAccountClient(), {
+        listAssets: async () => [ethereumAsset],
+        getBalances: async () => [
+          createBalance({ symbol: 'ETH', balance: 1_000n })
+        ],
+        getTransferGasCostEstimate: async () =>
+          createGasEstimate({
+            callGasLimit: 100_000n,
+            preVerificationGas: 50_000n,
+            verificationGasLimit: 50_000n,
+            maxFeePerGas: 1_000_000_000n
+          })
+      });
+
+      const summary = await loadVaultWithdrawSummary(
+        { getAccount: async () => accountClient },
+        createAccount(),
+        '0x1111111111111111111111111111111111111111'
+      );
+
+      expect(summary).toMatchObject({ status: 'ready', recipientAmount: null });
     });
 
     it('blocks review when libqc rejects the Bitcoin destination', async () => {
@@ -327,7 +353,11 @@ describe('vault operations', () => {
         'tb1q07fymc3nhh8vtvmp6suhurh7tpnkm290mtwug8'
       );
 
-      expect(summary).toMatchObject({ status: 'ready', estimatedFee: null });
+      expect(summary).toMatchObject({
+        status: 'ready',
+        estimatedFee: null,
+        recipientAmount: null
+      });
       consoleError.mockRestore();
     });
   });

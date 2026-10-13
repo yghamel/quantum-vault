@@ -8,7 +8,6 @@ export const autoBalanceRefreshIntervalMs = convertDuration(30, 's', 'ms');
 const autoRefreshScreens: ReadonlySet<ScreenKey> = new Set<ScreenKey>([
   'home',
   'vault-detail',
-  'account',
   'receive'
 ]);
 

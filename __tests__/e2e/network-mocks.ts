@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 export const DEFAULT_RECOVERY_EVM_ADDRESS =
   '0x2D02E0c31958b9074F96FF71B42b416fD2c35675';
 export const DEFAULT_RECOVERY_BTC_ADDRESS =
-  'bc1qs5mlpxfrfzfacpme683an38tdf353vt0cry9g2';
+  'tb1qs5mlpxfrfzfacpme683an38tdf353vt0j9lkne';
 
 type JsonRpcRequest = {
   id?: number | string | null;
@@ -29,6 +29,8 @@ type ParsedJsonRpcRequestBody = {
   isBatch: boolean;
 };
 
+const SEPOLIA_CHAIN_ID_HEX = '0xaa36a7';
+
 const CHAIN_RPC_METHOD_RESULT: Record<string, string> = {
   eth_blockNumber: '0x1',
   eth_getBalance: '0x0',
@@ -40,10 +42,6 @@ const CHAIN_RPC_METHOD_RESULT: Record<string, string> = {
 const LOCAL_ETHEREUM_RPC_ORIGINS = [
   'http://127.0.0.1:8545',
   'http://localhost:8545'
-] as const;
-const LOCAL_BASE_RPC_ORIGINS = [
-  'http://127.0.0.1:8546',
-  'http://localhost:8546'
 ] as const;
 const LOCAL_BITCOIN_API_ORIGINS = [
   'http://127.0.0.1:3001',
@@ -152,7 +150,6 @@ const resolveResponseId = (value: JsonRpcRequest['id']): number | string =>
 
 const resolveJsonRpcPayload = ({
   accountNotDeployedErrorData,
-  chainIdHex,
   parsed,
   resolvedEthBalance,
   exposedEvmAddresses,
@@ -160,7 +157,6 @@ const resolveJsonRpcPayload = ({
   ethCallBehavior
 }: {
   accountNotDeployedErrorData: string;
-  chainIdHex: '0x1' | '0x2105';
   parsed: JsonRpcRequest;
   resolvedEthBalance: string | null | undefined;
   exposedEvmAddresses: ReadonlySet<string>;
@@ -213,7 +209,7 @@ const resolveJsonRpcPayload = ({
     return {
       jsonrpc: '2.0',
       id: responseId,
-      result: chainIdHex
+      result: SEPOLIA_CHAIN_ID_HEX
     };
   }
 
@@ -287,7 +283,7 @@ const buildBitcoinOutgoingTx = (address: string) => ({
   ],
   vout: [
     {
-      scriptpubkey_address: 'bc1qwithdrawndestination000000000000000000000',
+      scriptpubkey_address: 'tb1qwithdrawndestination000000000000000000000',
       value: 900
     }
   ]
@@ -309,36 +305,18 @@ export const installDeterministicRecoveryNetwork = async ({
     bitcoinOutgoingAddresses
   );
 
-  const mainnetRpcOrigins = new Set<string>([
-    'https://eth.llamarpc.com',
-    ...LOCAL_ETHEREUM_RPC_ORIGINS
-  ]);
-  const baseRpcOrigins = new Set<string>([
-    'https://base.llamarpc.com',
-    ...LOCAL_BASE_RPC_ORIGINS
-  ]);
+  const rpcOrigins = new Set<string>(LOCAL_ETHEREUM_RPC_ORIGINS);
   const envEthOrigin = parseEnvOrigin(process.env.VITE_ETHEREUM_RPC_URL);
   const envEthBundlerOrigin = parseEnvOrigin(
     process.env.VITE_ETHEREUM_BUNDLER_RPC_URL
   );
-  const envBaseOrigin = parseEnvOrigin(process.env.VITE_BASE_RPC_URL);
-  const envBaseBundlerOrigin = parseEnvOrigin(
-    process.env.VITE_BASE_BUNDLER_RPC_URL
-  );
   if (envEthOrigin) {
-    mainnetRpcOrigins.add(envEthOrigin);
+    rpcOrigins.add(envEthOrigin);
   }
   if (envEthBundlerOrigin) {
-    mainnetRpcOrigins.add(envEthBundlerOrigin);
-  }
-  if (envBaseOrigin) {
-    baseRpcOrigins.add(envBaseOrigin);
-  }
-  if (envBaseBundlerOrigin) {
-    baseRpcOrigins.add(envBaseBundlerOrigin);
+    rpcOrigins.add(envEthBundlerOrigin);
   }
 
-  const rpcOrigins = new Set<string>([...mainnetRpcOrigins, ...baseRpcOrigins]);
   for (const origin of rpcOrigins) {
     let lastResolvedEvmAddress = fallbackEvmAddress;
 
@@ -348,10 +326,6 @@ export const installDeterministicRecoveryNetwork = async ({
         return;
       }
 
-      const requestUrl = new URL(route.request().url());
-      const chainIdHex: '0x1' | '0x2105' = baseRpcOrigins.has(requestUrl.origin)
-        ? '0x2105'
-        : '0x1';
       const body = route.request().postData();
       const parsedBody = body
         ? parseJsonRpcRequest(body)
@@ -373,7 +347,6 @@ export const installDeterministicRecoveryNetwork = async ({
 
         return resolveJsonRpcPayload({
           accountNotDeployedErrorData,
-          chainIdHex,
           parsed,
           resolvedEthBalance,
           exposedEvmAddresses: exposedEvmAddressSet,
@@ -390,10 +363,7 @@ export const installDeterministicRecoveryNetwork = async ({
     });
   }
 
-  const bitcoinOrigins = new Set<string>([
-    'https://blockstream.info',
-    ...LOCAL_BITCOIN_API_ORIGINS
-  ]);
+  const bitcoinOrigins = new Set<string>(LOCAL_BITCOIN_API_ORIGINS);
   const envBitcoinOrigin = parseEnvOrigin(process.env.VITE_BITCOIN_API_URL);
   if (envBitcoinOrigin) {
     bitcoinOrigins.add(envBitcoinOrigin);

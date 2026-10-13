@@ -1,3 +1,4 @@
+import { vaultDetailInsufficientWithdrawCopyByNamespace } from '@/lib/copy';
 import type { ActivityRow } from '@/modules/vaults/data/mappers/activity';
 
 vi.mock('@project-eleven/libqc', () => ({
@@ -541,6 +542,17 @@ describe('vault detail core', () => {
       withdrawNativeBalanceThresholdByNamespace[evmChainNamespace];
     const bitcoinThreshold =
       withdrawNativeBalanceThresholdByNamespace[bitcoinChainNamespace];
+
+    it('states the actual minimum in the below-threshold message', () => {
+      expect(ethThreshold).toBe(10n ** 15n);
+      expect(vaultDetailInsufficientWithdrawCopyByNamespace.eip155).toContain(
+        '0.001 ETH'
+      );
+      expect(bitcoinThreshold).toBe(900n);
+      expect(vaultDetailInsufficientWithdrawCopyByNamespace.bip122).toContain(
+        '0.000009 BTC (900 sats)'
+      );
+    });
     const withdrawBalanceStates = [
       {
         label: 'zero native balance',

@@ -15,7 +15,6 @@ export const VALID_EVM_ADDRESS = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
 export const vaultLoadTimeoutMs = 20_000;
 const vaultStoragePrefix = 'vault_';
 const mnemonicWordPattern = /(?:^|\s)(?:0?[1-9]|1\d|2[0-4])[.)]?\s+([a-z]+)/g;
-const wordsPerSeedRevealPage = 12;
 const totalMnemonicWordCount = 24;
 const defaultSecretPhraseTestId = 'secret-phrase';
 const initialCreateWalletButtonName =
@@ -202,17 +201,13 @@ export const resetClientStorage = async (page: Page): Promise<void> => {
 };
 
 export const completeStartupOnboarding = async (page: Page): Promise<void> => {
-  const onboardingHeading = page.getByRole('heading', {
-    name: 'Sensible quantum security'
-  });
+  const getStartedButton = page.getByTestId('onboarding-get-started-button');
 
-  if (!(await onboardingHeading.isVisible())) {
+  if (!(await getStartedButton.isVisible())) {
     return;
   }
 
-  await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: /^get started$/i }).click();
+  await getStartedButton.click();
 
   const createButton = page.getByRole('button', {
     name: initialCreateWalletButtonName
@@ -237,7 +232,7 @@ const ensureInitialEntrySurface = async (page: Page): Promise<void> => {
   const recoverButton = page.getByRole('button', {
     name: initialRecoverWalletButtonName
   });
-  const homeHeading = page.getByRole('heading', { name: 'Quantum Vault' });
+  const homeSurface = page.getByTestId('settings-button');
   const unlockButton = page.getByRole('button', { name: 'Unlock' });
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -246,7 +241,7 @@ const ensureInitialEntrySurface = async (page: Page): Promise<void> => {
     }
 
     // If startup drifts into lock/home, re-establish a clean entry flow.
-    if ((await homeHeading.isVisible()) || (await unlockButton.isVisible())) {
+    if ((await homeSurface.isVisible()) || (await unlockButton.isVisible())) {
       await resetClientStorage(page);
     } else {
       await page.reload();
@@ -288,8 +283,8 @@ export const expectUnifiedHomeSectionOrder = async (
         .filter((value): value is string => value !== null)
     );
 
-  const expectedOrder = ['vulnerable', 'safe', 'withdrawn'].filter(status =>
-    renderedSectionOrder.includes(status)
+  const expectedOrder = ['vulnerable', 'unknown', 'safe', 'withdrawn'].filter(
+    status => renderedSectionOrder.includes(status)
   );
 
   expect(renderedSectionOrder).toEqual(expectedOrder);
@@ -327,7 +322,7 @@ export const expectAddressToAppearInHomeSection = async ({
 }: {
   page: Page;
   address: string;
-  status: 'vulnerable' | 'safe' | 'withdrawn';
+  status: 'vulnerable' | 'unknown' | 'safe' | 'withdrawn';
 }): Promise<void> => {
   await expect
     .poll(
@@ -342,12 +337,6 @@ export const expectAddressToAppearInHomeSection = async ({
 };
 
 export const expectHomeVisible = async (page: Page): Promise<void> => {
-  await expect(
-    page.getByRole('heading', { name: 'Quantum Vault' })
-  ).toBeVisible({
-    timeout: vaultLoadTimeoutMs
-  });
-
   await expect(page.getByTestId('settings-button')).toBeVisible({
     timeout: vaultLoadTimeoutMs
   });
@@ -574,8 +563,8 @@ export const unlockWalletIfPrompted = async (
   password: string = TEST_USER_PASSWORD
 ): Promise<void> => {
   const unlockButton = page.getByRole('button', { name: 'Unlock' });
-  const homeHeading = page.getByRole('heading', { name: 'Quantum Vault' });
-  await expect(unlockButton.or(homeHeading).first()).toBeVisible({
+  const homeSurface = page.getByTestId('settings-button');
+  await expect(unlockButton.or(homeSurface).first()).toBeVisible({
     timeout: vaultLoadTimeoutMs
   });
 
@@ -628,23 +617,15 @@ export const createWalletAndOpenHome = async ({
     ).toBeVisible();
     await page.getByRole('button', { name: 'Click to Reveal' }).click();
 
-    const firstPageWords = await readRecoveryPhraseRevealPageWords({ page });
-    expect(firstPageWords).toHaveLength(wordsPerSeedRevealPage);
+    const mnemonicWords = await readRecoveryPhraseRevealPageWords({ page });
+    expect(mnemonicWords).toHaveLength(totalMnemonicWordCount);
 
     await page.getByRole('button', { name: 'Hide Phrase' }).click();
     await expectSecretPhraseExcludesWords({
       page,
-      words: firstPageWords
+      words: mnemonicWords
     });
     await page.getByRole('button', { name: 'Click to Reveal' }).click();
-
-    await page.getByRole('button', { name: 'Next' }).click();
-
-    const secondPageWords = await readRecoveryPhraseRevealPageWords({ page });
-    expect(secondPageWords).toHaveLength(wordsPerSeedRevealPage);
-
-    const mnemonicWords = [...firstPageWords, ...secondPageWords];
-    expect(mnemonicWords).toHaveLength(totalMnemonicWordCount);
 
     await page.getByRole('button', { name: 'I Wrote It Down' }).click();
     await page.getByRole('button', { name: 'Confirm Now' }).click();
@@ -668,12 +649,6 @@ export const createWalletAndOpenHome = async ({
         page.getByRole('button', { name: 'Click to Reveal' })
       ).toBeVisible();
       await page.getByRole('button', { name: 'Click to Reveal' }).click();
-
-      const nextButton = page.getByRole('button', { name: 'Next' });
-      if (await nextButton.isVisible()) {
-        await nextButton.click();
-      }
-
       await page.getByRole('button', { name: 'I Wrote It Down' }).click();
 
       const doThisLaterButton = page.getByRole('button', {
@@ -891,7 +866,7 @@ export const openReceiveScreen = async (page: Page): Promise<void> => {
   await expect(page.getByText('Select receiving network')).toBeVisible();
 };
 
-type VaultAddressPrefix = '0x' | 'bc1';
+type VaultAddressPrefix = '0x' | 'tb1';
 type WithdrawButtonExpectation = 'visible' | 'hidden';
 
 const openVaultDetailByAddressPrefix = async ({
@@ -984,7 +959,7 @@ export const openBitcoinVaultDetail = async (
   openVaultDetailByAddressPrefix({
     page,
     ...input,
-    addressPrefix: 'bc1'
+    addressPrefix: 'tb1'
   });
 
 type WithdrawFlowPath = 'manual' | 'suggested';
@@ -1163,7 +1138,7 @@ export const getPrimaryEthereumAddress = async (
 
 export const getPrimaryBitcoinAddress = async (page: Page): Promise<string> => {
   const address = await page
-    .locator('[data-testid="vault-card"][data-address^="bc1"]')
+    .locator('[data-testid="vault-card"][data-address^="tb1"]')
     .first()
     .getAttribute('data-address');
 
@@ -1207,10 +1182,7 @@ export const installDeterministicBitcoinReadMocks = async (
     txCount?: number;
   } = {}
 ): Promise<void> => {
-  const bitcoinOrigins = new Set<string>([
-    'https://blockstream.info',
-    ...localBitcoinApiOrigins
-  ]);
+  const bitcoinOrigins = new Set<string>(localBitcoinApiOrigins);
   const envBitcoinOrigin = parseEnvOrigin(process.env.VITE_BITCOIN_API_URL);
   if (envBitcoinOrigin) {
     bitcoinOrigins.add(envBitcoinOrigin);

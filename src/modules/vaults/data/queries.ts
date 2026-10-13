@@ -96,36 +96,6 @@ export const loadVaultDetailData = async ({
   };
 };
 
-export const useAccountDataQuery = ({
-  currency,
-  selectedAccount,
-  sessionId,
-  vault
-}: {
-  currency: CurrencyCode;
-  selectedAccount?: PersistedAccount;
-  sessionId: number;
-  vault: AccountQueryVaultShape;
-}) =>
-  useQuery({
-    queryKey: vaultQueryKeys.accountData({
-      sessionId,
-      accountId: selectedAccount?.id.toString(),
-      currency
-    }),
-    enabled: selectedAccount !== undefined,
-    staleTime: Infinity,
-    gcTime: queryGcTimeMs,
-    retry: false,
-    refetchOnWindowFocus: false,
-    queryFn: () =>
-      loadAccountData({
-        accountId: ensurePresent(selectedAccount, 'selected account id').id,
-        currency,
-        vault
-      })
-  });
-
 export const useVaultDetailDataQuery = ({
   currency,
   selectedAccount,

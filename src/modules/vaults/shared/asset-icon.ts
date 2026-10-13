@@ -1,10 +1,14 @@
 import type { Asset } from '@project-eleven/libqc';
 
-const canonicalEthereumIconUrl =
-  'https://assets.coingecko.com/asset_platforms/images/279/large/ethereum.png';
+import bitcoinIconUrl from '@/assets/chains/bitcoin.svg';
+import ethereumIconUrl from '@/assets/chains/ethereum.svg';
 
-const shouldUseChainIcon = (assetSymbol: string): boolean =>
-  assetSymbol === 'ETH' || assetSymbol === 'stETH';
+/** Native assets render bundled icons so they work offline. */
+const bundledIconUrlBySymbol: Partial<Record<string, string>> = {
+  BTC: bitcoinIconUrl,
+  ETH: ethereumIconUrl,
+  stETH: ethereumIconUrl
+};
 
 export const resolveAssetIconUrl = ({
   asset,
@@ -12,7 +16,11 @@ export const resolveAssetIconUrl = ({
 }: {
   asset: Pick<Asset, 'iconUrl' | 'symbol'>;
   chainIconUrl: string | null;
-}): string =>
-  shouldUseChainIcon(asset.symbol)
-    ? (chainIconUrl ?? canonicalEthereumIconUrl)
-    : asset.iconUrl;
+}): string => {
+  const bundledIconUrl = bundledIconUrlBySymbol[asset.symbol];
+  if (bundledIconUrl === undefined) {
+    return asset.iconUrl;
+  }
+
+  return chainIconUrl ?? bundledIconUrl;
+};

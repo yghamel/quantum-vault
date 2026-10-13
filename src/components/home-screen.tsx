@@ -9,6 +9,10 @@ import {
   homeCopy
 } from '@/lib/copy';
 import { formatCurrencyValue } from '@/lib/currency';
+import {
+  clearWithdrawalInterrupted,
+  isWithdrawalInterrupted
+} from '@/lib/interrupted-withdrawal';
 import { vaultStatuses } from '@/modules/vaults/core';
 import { useVaultAccountSnapshotsQuery } from '@/modules/vaults/data/hooks';
 import {
@@ -39,6 +43,7 @@ import { Button } from './ui/button';
 import { CenterAbsolutely } from './ui/center-absolutely';
 import { Skeleton } from './ui/skeleton';
 import type { WithdrawSyncStatus } from '@/providers/wallet-provider';
+import { useState } from 'react';
 
 const homeSkeletonIds = ['skeleton-1', 'skeleton-2', 'skeleton-3'] as const;
 
@@ -90,6 +95,12 @@ export const HomeScreen = () => {
     clearWalletState,
     latestWithdrawalRecordByAccountId
   } = useWallet();
+  const [showInterruptedWithdrawalNotice, setShowInterruptedWithdrawalNotice] =
+    useState(isWithdrawalInterrupted);
+  const dismissInterruptedWithdrawalNotice = () => {
+    clearWithdrawalInterrupted();
+    setShowInterruptedWithdrawalNotice(false);
+  };
   const withdrawalReconciliationState = withdrawSyncState.status;
   const isWithdrawalReconciliationDismissable =
     withdrawalReconciliationState === 'failed' ||
@@ -214,6 +225,24 @@ export const HomeScreen = () => {
           className='mt-4'
         />
       )}
+      {showInterruptedWithdrawalNotice ? (
+        <AlertBanner
+          data-testid='home-interrupted-withdrawal-banner'
+          tone='warning'
+          title={homeCopy.interruptedWithdrawalTitle}
+          lines={[
+            {
+              id: 'home-interrupted-withdrawal',
+              text: homeCopy.interruptedWithdrawalBody
+            }
+          ]}
+          fullBleed
+          className={vulnerableAlertLines.length > 0 ? 'mt-2' : 'mt-4'}
+          onDismiss={dismissInterruptedWithdrawalNotice}
+          dismissAriaLabel={homeCopy.interruptedWithdrawalDismissAria}
+          dismissButtonTestId='home-interrupted-withdrawal-dismiss-button'
+        />
+      ) : null}
       {homeSyncBanner ? (
         <AlertBanner
           data-testid='home-withdraw-sync-banner'

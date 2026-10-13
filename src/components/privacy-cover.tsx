@@ -54,7 +54,7 @@ export const PrivacyCover = () => {
       data-testid='privacy-cover'
       className='fixed inset-0 z-100 flex items-center justify-center bg-background'
     >
-      <p className='text-2xl text-foreground'>Quantum Vault</p>
+      <p className='text-2xl text-foreground'>Quantum Vault Wallet</p>
     </div>
   );
 };

@@ -41,6 +41,7 @@ export const lifecyclePolicyByKind: Record<
   VaultLifecyclePolicy
 > = {
   safe: { depositEligible: true, homeStatus: 'safe' },
+  unknown: { depositEligible: false, homeStatus: 'unknown' },
   vulnerable: { depositEligible: false, homeStatus: 'vulnerable' },
   pending: { depositEligible: false, homeStatus: 'withdrawn' },
   sent: { depositEligible: false, homeStatus: 'withdrawn' },
@@ -56,6 +57,7 @@ const getEmptyAccountsByHomeStatus = (): Record<
   Array<PersistedAccount>
 > => ({
   vulnerable: [],
+  unknown: [],
   safe: [],
   withdrawn: []
 });

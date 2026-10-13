@@ -11,9 +11,10 @@ const LIBQC_STORAGE_PREFIX = 'vault_';
  * JSON from libqc's perspective (encryption happens in the SDK state layer).
  *
  * Production iOS: Keychain via `capacitor-secure-storage-plugin`
- * (SwiftKeychainWrapper / `cap_sec` service). Accessibility is plugin-default
- * (typically unlocked-device). Items are not intended for iCloud Keychain sync.
- * Flag for security review: confirm WhenUnlockedThisDeviceOnly in production.
+ * (SwiftKeychainWrapper / `cap_sec` service). The plugin is patched to write
+ * every item as WhenUnlockedThisDeviceOnly and to upgrade items saved under an
+ * older accessibility class on their next read, so vault material is never
+ * synced to iCloud Keychain or restored onto another device.
  *
  * Non-native (unit tests / Vite web preview): in-memory Map only — never
  * silently persist vault material to `localStorage` in this adapter.

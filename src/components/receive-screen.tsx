@@ -14,6 +14,10 @@ import { ArrowRightIcon, CopyIcon, Loader2Icon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import {
+  receiveQrCenterKeepOutDataUri,
+  receiveQrSettings
+} from './receive-qr-settings';
 import { Screen } from './screen';
 import { refreshBalancesOnReceiveExit } from './receive-screen-refresh';
 import { BackButton } from './ui/back-button';
@@ -95,11 +99,6 @@ const namespaceConfigByNamespace = {
     networkSubtitle: 'ETH'
   }
 } as const;
-
-const qrCodeSizePx = 152;
-const qrCenterKeepOutSizePx = 69;
-const qrCenterKeepOutDataUri =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='69' height='69' viewBox='0 0 69 69'%3E%3Crect width='69' height='69' fill='%2309090b'/%3E%3C/svg%3E";
 
 type SupportedNamespace = keyof typeof namespaceConfigByNamespace;
 
@@ -445,25 +444,29 @@ export const ReceiveScreen = () => {
 
           <div className='mt-8 flex justify-center'>
             <div
-              className='flex h-[177px] w-[182px] items-center justify-center border border-popover'
+              className='flex items-center justify-center border border-popover p-1'
               data-testid='receive-qr-code'
             >
               <div className='relative'>
                 <QRCodeSVG
                   value={accountToDisplay.address}
-                  size={qrCodeSizePx}
-                  level='H'
+                  size={receiveQrSettings.sizePx}
+                  level={receiveQrSettings.level}
+                  marginSize={receiveQrSettings.marginModules}
                   imageSettings={{
-                    src: qrCenterKeepOutDataUri,
-                    width: qrCenterKeepOutSizePx,
-                    height: qrCenterKeepOutSizePx,
+                    src: receiveQrCenterKeepOutDataUri,
+                    width: receiveQrSettings.centerKeepOutSizePx,
+                    height: receiveQrSettings.centerKeepOutSizePx,
                     excavate: true
                   }}
                 />
                 <div className='absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center'>
                   <img
                     src={accountChain.iconUrl}
-                    className='size-[29px]'
+                    style={{
+                      width: receiveQrSettings.centerIconSizePx,
+                      height: receiveQrSettings.centerIconSizePx
+                    }}
                     alt=''
                     aria-hidden='true'
                   />

@@ -29,6 +29,22 @@ const toBitcoinTransactionId = (value: string): BitcoinTransactionId => {
 };
 
 describe('vault lifecycle adapter', () => {
+  it('never reports a vault as safe when its status could not be read', () => {
+    for (const isUnavailable of [false, true]) {
+      expect(
+        deriveVaultLifecycleStatus({
+          withdrawalRecord: undefined,
+          snapshot: {
+            status: null,
+            isUnavailable,
+            tokenCount: isUnavailable ? null : 1,
+            totalBalance: isUnavailable ? null : 10
+          }
+        })
+      ).toEqual({ kind: 'unknown' });
+    }
+  });
+
   it('maps pending withdrawal records to sent lifecycle state when source snapshot is empty', () => {
     const lifecycleStatus = deriveVaultLifecycleStatus({
       withdrawalRecord,

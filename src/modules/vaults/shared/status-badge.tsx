@@ -10,6 +10,7 @@ type StatusBadgeProps = {
 
 const kindToClassName: Record<StatusBadgeKind, string> = {
   safe: 'bg-success/15 text-success',
+  unknown: 'bg-warning/15 text-warning',
   vulnerable: 'bg-destructive/15 text-destructive',
   withdrawn: 'bg-secondary text-foreground'
 };
@@ -17,6 +18,7 @@ const kindToClassName: Record<StatusBadgeKind, string> = {
 const kindToLabel = (kind: StatusBadgeKind): string =>
   match(kind, {
     safe: () => vaultDetailCopy.safeBadge,
+    unknown: () => vaultDetailCopy.unknownBadge,
     vulnerable: () => vaultDetailCopy.vulnerableBadge,
     withdrawn: () => vaultDetailCopy.withdrawnBadge
   });

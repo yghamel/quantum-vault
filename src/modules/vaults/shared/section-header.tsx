@@ -9,6 +9,7 @@ type SectionHeaderProps = {
 
 const statusToColor: Record<VaultStatus, string> = {
   vulnerable: 'text-destructive',
+  unknown: 'text-warning',
   safe: 'text-success',
   withdrawn: 'text-muted-foreground'
 };

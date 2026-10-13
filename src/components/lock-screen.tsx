@@ -4,6 +4,7 @@ import { Loader2Icon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
+import { passwordConfirmCopy } from '@/components/shared/use-password-confirmation';
 import { readPasswordFieldValues } from '@/components/shared/password-field-dom';
 import { PasswordRevealToggle } from '@/components/shared/password-reveal-toggle';
 import { QuantumVaultMark } from '@/components/shared/quantum-vault-mark';
@@ -19,6 +20,12 @@ import { attempt } from '@/lib/attempt';
 import { toastMessages } from '@/lib/content';
 import { match } from '@/lib/match';
 import { toExistingVaultPasswordBytes } from '@/lib/password';
+import {
+  formatLockoutRemaining,
+  getPasswordLockoutRemainingMs,
+  recordFailedPasswordAttempt,
+  resetPasswordAttempts
+} from '@/lib/password-attempts';
 import { withZeroed } from '@/lib/secrets-zeroing';
 import { clearSecretRef, replaceSecretRef, zeroOut } from '@/lib/utils';
 
@@ -59,6 +66,18 @@ export const LockScreen = () => {
       return;
     }
 
+    const lockoutRemainingMs = getPasswordLockoutRemainingMs();
+    if (lockoutRemainingMs > 0) {
+      clearPassword();
+      zeroOut(passwordInputRef);
+      toast.error(
+        passwordConfirmCopy.lockedOut(
+          formatLockoutRemaining(lockoutRemainingMs)
+        )
+      );
+      return;
+    }
+
     setPassword(readPasswordFieldValues({ passwordInputRef }).password);
     if (passwordRef.current.length === 0) {
       setIsPasswordMissing(true);
@@ -85,9 +104,11 @@ export const LockScreen = () => {
         navigate('wallet-recovery');
         return;
       }
+      recordFailedPasswordAttempt();
       toast.error(toastMessages.invalidPassword);
       return;
     }
+    resetPasswordAttempts();
 
     const initWalletResult = await attempt(() => initWallet());
     if ('error' in initWalletResult) {

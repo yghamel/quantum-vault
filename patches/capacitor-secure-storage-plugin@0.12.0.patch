@@ -1,0 +1,76 @@
+diff --git a/ios/Sources/SecureStoragePlugin/SecureStoragePlugin.swift b/ios/Sources/SecureStoragePlugin/SecureStoragePlugin.swift
+index 902a7bff1731382bd15d8d2a78e227e46fb40f78..3f5b7f15707a31c1a1c285cefbb63ae9520fb891 100644
+--- a/ios/Sources/SecureStoragePlugin/SecureStoragePlugin.swift
++++ b/ios/Sources/SecureStoragePlugin/SecureStoragePlugin.swift
+@@ -19,11 +19,41 @@ public class SecureStoragePlugin: CAPPlugin, CAPBridgedPlugin {
+         CAPPluginMethod(name: "getPlatform", returnType: CAPPluginReturnPromise),
+     ] 
+     var keychainwrapper: KeychainWrapper = KeychainWrapper.init(serviceName: "cap_sec")
++
++    private static let accessibility: KeychainItemAccessibility = .whenUnlockedThisDeviceOnly
++
++    /// Writes `value` readable only while this device is unlocked and never
++    /// migrated to another device. An item saved under another accessibility
++    /// class is rewritten in place by one SecItemUpdate, so it is never
++    /// deleted before its replacement exists.
++    private func save(_ value: String, forKey key: String) -> Bool {
++        if keychainwrapper.set(value, forKey: key, withAccessibility: SecureStoragePlugin.accessibility) {
++            return true
++        }
++        guard let data = value.data(using: .utf8), let account = key.data(using: .utf8) else {
++            return false
++        }
++        var query: [String: Any] = [
++            kSecClass as String: kSecClassGenericPassword,
++            kSecAttrService as String: keychainwrapper.serviceName,
++            kSecAttrGeneric as String: account,
++            kSecAttrAccount as String: account,
++            kSecAttrSynchronizable as String: kCFBooleanFalse as Any
++        ]
++        if let accessGroup = keychainwrapper.accessGroup {
++            query[kSecAttrAccessGroup as String] = accessGroup
++        }
++        let attributes: [String: Any] = [
++            kSecValueData as String: data,
++            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
++        ]
++        return SecItemUpdate(query as CFDictionary, attributes as CFDictionary) == errSecSuccess
++    }
+     
+     @objc func set(_ call: CAPPluginCall) {
+         let key = call.getString("key") ?? ""
+         let value = call.getString("value") ?? ""
+-        let saveSuccessful: Bool = keychainwrapper.set(value, forKey: key, withAccessibility: .afterFirstUnlock)
++        let saveSuccessful: Bool = save(value, forKey: key)
+         if(saveSuccessful) {
+             call.resolve([
+                 "value": saveSuccessful
+@@ -41,10 +71,9 @@ public class SecureStoragePlugin: CAPPlugin, CAPBridgedPlugin {
+         
+         // copy standard value to dedicated and remove standard key
+         if (hasValueStandard && !hasValueDedicated) {
+-            let syncValueSuccessful: Bool = keychainwrapper.set(
++            let syncValueSuccessful: Bool = save(
+                 KeychainWrapper.standard.string(forKey: key) ?? "",
+-                forKey: key,
+-                withAccessibility: .afterFirstUnlock
++                forKey: key
+             )
+             let removeValueSuccessful: Bool = KeychainWrapper.standard.removeObject(forKey: key)
+             if (!syncValueSuccessful || !removeValueSuccessful) {
+@@ -53,8 +82,14 @@ public class SecureStoragePlugin: CAPPlugin, CAPBridgedPlugin {
+         }
+         
+         if(hasValueDedicated || hasValueStandard) {
++            let value = keychainwrapper.string(forKey: key) ?? ""
++            // Upgrade items written by earlier versions; a failed upgrade
++            // leaves the original item readable.
++            if keychainwrapper.accessibilityOfKey(key) != SecureStoragePlugin.accessibility {
++                _ = save(value, forKey: key)
++            }
+             call.resolve([
+-                "value": keychainwrapper.string(forKey: key) ?? ""
++                "value": value
+             ])
+         }
+         else {

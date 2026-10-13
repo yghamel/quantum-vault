@@ -161,6 +161,7 @@ export const VaultDetailFundsPanel = ({
 
   return match<VaultLifecycleKind, ReactNode>(lifecycleKind, {
     safe: renderAssetRows,
+    unknown: renderAssetRows,
     vulnerable: renderAssetRows,
     pending: renderPendingFundsState,
     sent: () =>

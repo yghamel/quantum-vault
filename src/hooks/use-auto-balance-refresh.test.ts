@@ -52,7 +52,6 @@ describe('shouldAutoRefreshBalancesOnScreen', () => {
   it.each<[ScreenKey, boolean]>([
     ['home', true],
     ['vault-detail', true],
-    ['account', true],
     ['receive', true],
     ['vault-withdraw', false],
     ['lock', false],

@@ -41,6 +41,7 @@ export const vaultActivitiesQueryFreshnessPolicy = {
 
 const lifecycleKindToVaultState: Record<VaultLifecycleKind, VaultStatus> = {
   safe: 'safe',
+  unknown: 'unknown',
   vulnerable: 'vulnerable',
   pending: 'withdrawn',
   sent: 'withdrawn',
@@ -49,6 +50,7 @@ const lifecycleKindToVaultState: Record<VaultLifecycleKind, VaultStatus> = {
 
 const lifecycleKindRequiresActivities: Record<VaultLifecycleKind, boolean> = {
   safe: false,
+  unknown: false,
   vulnerable: false,
   pending: true,
   sent: true,
@@ -177,7 +179,7 @@ const resolveLifecycleStatus = ({
   latestWithdrawalRecordByAccountId: LatestWithdrawalRecordByAccountId;
 }): VaultLifecycleStatus => {
   if (selectedAccount === undefined || vaultDetailQueryData === undefined) {
-    return { kind: 'safe' };
+    return { kind: 'unknown' };
   }
   const accountId = selectedAccount.id.toString();
   const positiveBalanceCount = vaultDetailQueryData.balances.filter(

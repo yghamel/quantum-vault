@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   createSessionTimeoutController,
+  holdSessionTimeout,
+  isSessionTimeoutHeld,
   shouldTrackSessionForScreen,
   vaultSessionStateChangedEventName
 } from './use-session-timeout';
@@ -70,6 +72,30 @@ describe('shouldTrackSessionForScreen', () => {
     ).toBe(true);
   });
 
+  it('always tracks session on the withdraw screen', () => {
+    expect(
+      shouldTrackSessionForScreen({
+        activeScreen: 'vault-withdraw',
+        isVaultUnlocked: true
+      })
+    ).toBe(true);
+  });
+
+  it('tracks session on legal documents only when vault is unlocked', () => {
+    expect(
+      shouldTrackSessionForScreen({
+        activeScreen: 'legal-document',
+        isVaultUnlocked: false
+      })
+    ).toBe(false);
+    expect(
+      shouldTrackSessionForScreen({
+        activeScreen: 'legal-document',
+        isVaultUnlocked: true
+      })
+    ).toBe(true);
+  });
+
   it('never tracks session on lock screen', () => {
     expect(
       shouldTrackSessionForScreen({
@@ -128,6 +154,35 @@ describe('createSessionTimeoutController', () => {
 
     vi.advanceTimersByTime(1);
     expect(onTimeout).toHaveBeenCalledTimes(1);
+  });
+
+  it('defers the timeout while a session hold is active and restarts it on release', () => {
+    vi.useFakeTimers();
+    const eventTarget = new EventTarget();
+    const onTimeout = vi.fn();
+    vi.stubGlobal('window', {
+      dispatchEvent: (event: Event) => eventTarget.dispatchEvent(event)
+    });
+    createSessionTimeoutController({
+      activeScreen: 'vault-withdraw',
+      eventTarget,
+      isVaultUnlocked: () => true,
+      onTimeout
+    });
+
+    const releaseHold = holdSessionTimeout();
+    expect(isSessionTimeoutHeld()).toBe(true);
+    vi.advanceTimersByTime(sessionTimeoutMs * 2);
+    expect(onTimeout).not.toHaveBeenCalled();
+
+    releaseHold();
+    releaseHold();
+    expect(isSessionTimeoutHeld()).toBe(false);
+    vi.advanceTimersByTime(sessionTimeoutMs - 1);
+    expect(onTimeout).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(onTimeout).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
   });
 
   it('cancels the pending timeout on cleanup', () => {

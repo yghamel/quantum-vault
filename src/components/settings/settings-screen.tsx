@@ -1,3 +1,4 @@
+import { FileTextIcon } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -79,6 +80,13 @@ export const SettingsScreen = () => {
       icon: SettingsExportKeysIcon,
       testId: 'export-keys-button',
       onSelect: () => navigate('export-recovery-phrase')
+    },
+    {
+      id: 'legal',
+      label: 'PRIVACY & TERMS',
+      icon: FileTextIcon,
+      testId: 'legal-documents-button',
+      onSelect: () => navigate('legal-document')
     },
     {
       id: 'delete-quantum-vault',

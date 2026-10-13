@@ -13,6 +13,7 @@ describe('vault lifecycle core', () => {
       expected: boolean;
     }> = [
       { lifecycleKind: 'safe', expected: false },
+      { lifecycleKind: 'unknown', expected: false },
       { lifecycleKind: 'vulnerable', expected: false },
       { lifecycleKind: 'pending', expected: true },
       { lifecycleKind: 'sent', expected: true },

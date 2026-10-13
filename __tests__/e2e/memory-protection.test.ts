@@ -190,7 +190,7 @@ test.describe('Memory Protection: UI Sensitive Data @security', () => {
     await page.getByTestId('open-vault').click();
 
     await expect(
-      page.getByRole('heading', { name: 'Quantum Vault', exact: true })
+      page.getByRole('heading', { name: 'Quantum Vault Wallet', exact: true })
     ).toBeVisible();
 
     // 6. Final absence (Mnemonic and password should be cleared from heap).
@@ -271,7 +271,7 @@ test.describe('Memory Protection: UI Sensitive Data @security', () => {
     await page.locator('button:visible', { hasText: /^Continue$/ }).click();
 
     await expect(
-      page.getByRole('heading', { name: 'Quantum Vault', exact: true })
+      page.getByRole('heading', { name: 'Quantum Vault Wallet', exact: true })
     ).toBeVisible();
 
     // 6. Final absence (Mnemonic should be cleared from heap after flow completion)

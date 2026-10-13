@@ -1,6 +1,6 @@
-import { AccountScreen } from './components/account-screen';
 import { HomeScreen } from './components/home-screen';
 import { InitialScreen } from './components/initial-screen';
+import { LegalDocumentScreen } from './components/legal/legal-document-screen';
 import { LockScreen } from './components/lock-screen';
 import { OnboardingScreen } from './components/onboarding-screen';
 import { ReceiveScreen } from './components/receive-screen';
@@ -25,10 +25,10 @@ export const screens = {
   'settings-lock-wallet': <SettingsLockWalletScreen />,
   'settings-delete-wallet': <SettingsDeleteWalletScreen />,
   'export-recovery-phrase': <ExportRecoveryPhraseScreen />,
-  account: <AccountScreen />,
   'vault-detail': <VaultDetailScreen />,
   'vault-withdraw': <VaultWithdrawScreen />,
   receive: <ReceiveScreen />,
+  'legal-document': <LegalDocumentScreen />,
   lock: <LockScreen />
 };
 

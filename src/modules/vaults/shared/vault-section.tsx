@@ -19,6 +19,7 @@ type VaultSectionProps = {
 
 const statusToSectionSurfaceClassName: Record<VaultStatus, string> = {
   vulnerable: 'border-l-2 border-destructive',
+  unknown: 'border-l-2 border-warning bg-warning/5',
   safe: 'border-l-2 border-success bg-success/5',
   withdrawn: 'border-l-2 border-muted-foreground/50 bg-secondary/40'
 };

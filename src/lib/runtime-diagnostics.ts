@@ -63,7 +63,7 @@ export const formatRuntimeDiagnosticsForCopy = ({
   generatedAt
 }: FormatRuntimeDiagnosticsForCopyInput): string =>
   [
-    'Quantum Vault diagnostics',
+    'Quantum Vault Wallet diagnostics',
     `generatedAt: ${generatedAt}`,
     ...copyFields.map(field => `${field.label}: ${field.getValue(diagnostics)}`)
   ].join('\n');

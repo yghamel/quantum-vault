@@ -106,7 +106,7 @@ Do not modify: mnemonic generation/validation, BIP-85, key derivation, passwords
 ## 6. Capacitor / Xcode
 
 - Capacitor **7.4.4** (pinned; matches Node 24 + existing port; Xcode 26.3)
-- `webDir: dist`, appId `com.projecteleven.quantumvault` (provisional until distribution)
+- `webDir: dist`, appId `com.lucidintel.quantumvaultwallet`
 - Privacy manifest required; no remote script execution
 - Simulator Debug build after `pnpm build:prod && pnpm exec cap sync ios`
 

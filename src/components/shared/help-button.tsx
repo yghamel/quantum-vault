@@ -52,7 +52,7 @@ export const HelpButton = ({ className }: HelpButtonProps) => {
               <motion.div
                 role='dialog'
                 aria-modal='true'
-                aria-label='About Quantum Vault'
+                aria-label='About Quantum Vault Wallet'
                 data-testid='help-sheet'
                 initial={{ y: '100%' }}
                 animate={{ y: 0 }}

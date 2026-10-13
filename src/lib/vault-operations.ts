@@ -1,4 +1,5 @@
 import { ensurePresent } from '@/lib/assert';
+import { attempt } from '@/lib/attempt';
 import {
   getInterfaceAssets,
   getPositiveNonInterfaceAssetBalances,
@@ -24,7 +25,12 @@ export type SummaryItem = {
 export type SummaryState =
   | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'ready'; items: SummaryItem[]; estimatedFee: string | null }
+  | {
+      status: 'ready';
+      items: SummaryItem[];
+      estimatedFee: string | null;
+      recipientAmount: string | null;
+    }
   | { status: 'unsupported-assets' }
   | { status: 'invalid-destination' }
   | { status: 'empty' }
@@ -201,6 +207,8 @@ export const assertNoNonInterfaceAssetBalances = async (
  *   - `'empty'` — the account has no assets with a non-zero balance.
  *   - `'ready'` — assets were found; `estimatedFee` is a human-readable fee
  *     string, or `null` when estimation fails or is unsupported for the chain.
+ *     `recipientAmount` is the native balance minus that fee (what the
+ *     destination receives), or `null` when the fee is unknown or exceeds it.
  *   - `'error'` — the asset or balance fetch itself failed.
  */
 export const loadVaultWithdrawSummary = async (
@@ -233,41 +241,62 @@ export const loadVaultWithdrawSummary = async (
     return { status: 'empty' };
   }
 
-  let estimatedFee: string | null = null;
   const nativeItem = items.find(({ asset }) => isNativeAsset(asset));
-  if (nativeItem && accountClient instanceof EvmAccountClient) {
-    try {
-      const estimate = await accountClient.getTransferGasCostEstimate(
+  if (!nativeItem) {
+    return {
+      status: 'ready',
+      items,
+      estimatedFee: null,
+      recipientAmount: null
+    };
+  }
+
+  let feeAmount: bigint | null = null;
+  if (accountClient instanceof EvmAccountClient) {
+    const estimateResult = await attempt(() =>
+      accountClient.getTransferGasCostEstimate(
         1n as TransactionValue,
         destination as EvmAddress
-      );
-      const perOpFee = computeFeeCost(estimate);
+      )
+    );
+    if ('error' in estimateResult) {
+      console.error('Failed to estimate EVM withdrawal fee');
+    } else {
       // Rough overestimate: assumes each asset costs the same as the native transfer.
       // ERC-20 transfers are typically cheaper, but this errs on the safe side.
-      const totalFee = perOpFee * BigInt(items.length);
-      const { symbol } = nativeItem.asset;
-      estimatedFee = `~${formatUnits(totalFee, nativeItem.asset.decimals)} ${symbol}`;
-    } catch (error) {
-      console.error('Failed to estimate EVM withdrawal fee:', error);
-      estimatedFee = null;
+      feeAmount = computeFeeCost(estimateResult.data) * BigInt(items.length);
     }
-  } else if (
-    nativeItem &&
-    hasBitcoinWithdrawFeeEstimateCapability(accountClient)
-  ) {
-    try {
-      const fee = await accountClient.estimateEmptyVaultFee(destination);
-      estimatedFee = `~${formatUnits(fee, nativeItem.asset.decimals)} ${nativeItem.asset.symbol}`;
-    } catch (error) {
-      // libqc validates the address against the vault's network here; the
-      // UI has no Bitcoin address parser of its own.
-      if (error instanceof InvalidDestinationAddressError) {
-        return { status: 'invalid-destination' };
-      }
-      console.error('Failed to estimate Bitcoin withdrawal fee:', error);
-      estimatedFee = null;
+  } else if (hasBitcoinWithdrawFeeEstimateCapability(accountClient)) {
+    const feeResult = await attempt(() =>
+      accountClient.estimateEmptyVaultFee(destination)
+    );
+    // libqc validates the address against the vault's network here; the
+    // UI has no Bitcoin address parser of its own.
+    if (
+      'error' in feeResult &&
+      feeResult.error instanceof InvalidDestinationAddressError
+    ) {
+      return { status: 'invalid-destination' };
+    }
+    if ('error' in feeResult) {
+      console.error('Failed to estimate Bitcoin withdrawal fee');
+    } else {
+      feeAmount = feeResult.data;
     }
   }
 
-  return { status: 'ready', items, estimatedFee };
+  const { decimals, symbol } = nativeItem.asset;
+  const nativeBalance = nativeItem.balance.balance;
+  const formatNative = (amount: bigint) =>
+    `~${formatUnits(amount, decimals)} ${symbol}`;
+
+  return {
+    status: 'ready',
+    items,
+    estimatedFee: feeAmount === null ? null : formatNative(feeAmount),
+    recipientAmount:
+      feeAmount === null || feeAmount >= nativeBalance
+        ? null
+        : formatNative(nativeBalance - feeAmount)
+  };
 };

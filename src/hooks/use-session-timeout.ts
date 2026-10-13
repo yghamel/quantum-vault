@@ -19,10 +19,10 @@ const screenSessionTrackingPolicy: Record<ScreenKey, SessionTrackingPolicy> = {
   initial: untrackedSessionPolicy,
   onboarding: untrackedSessionPolicy,
   lock: untrackedSessionPolicy,
-  'vault-withdraw': untrackedSessionPolicy,
+  'vault-withdraw': 'always',
+  'legal-document': 'when-unlocked',
   'wallet-recovery': 'always',
   home: 'always',
-  account: 'always',
   'vault-detail': 'always',
   receive: 'always',
   settings: 'always',
@@ -51,6 +51,29 @@ type UseSessionTimeoutInput = {
 export const notifyVaultSessionStateChanged = () => {
   window.dispatchEvent(new Event(vaultSessionStateChangedEventName));
 };
+
+let activeSessionHoldCount = 0;
+
+/**
+ * Defers idle lock while an operation that must not be interrupted (a
+ * withdrawal broadcast) is in flight. A timeout that expires during a hold is
+ * dropped; releasing the hold restarts a full idle window.
+ */
+export const holdSessionTimeout = (): (() => void) => {
+  activeSessionHoldCount += 1;
+  let isReleased = false;
+
+  return () => {
+    if (isReleased) {
+      return;
+    }
+    isReleased = true;
+    activeSessionHoldCount -= 1;
+    notifyVaultSessionStateChanged();
+  };
+};
+
+export const isSessionTimeoutHeld = (): boolean => activeSessionHoldCount > 0;
 
 type SessionTimeoutEventTarget = {
   addEventListener(
@@ -113,7 +136,13 @@ export const createSessionTimeoutController = ({
 
   const scheduleTimeout = () => {
     clearTimer();
-    timer = setTimeout(onTimeout, sessionTimeoutMs);
+    timer = setTimeout(() => {
+      timer = null;
+      if (isSessionTimeoutHeld()) {
+        return;
+      }
+      onTimeout();
+    }, sessionTimeoutMs);
   };
 
   const syncTimerWithSessionState = () => {

@@ -85,16 +85,11 @@ Use Electrum to import/sweep the BTC private key derived for the target index.
    - Sweep funds to the destination wallet
 5. Wait for confirmations and archive txid + destination in test notes.
 
-Known test vector (for dry-run validation only, never fund):
-
-- Mnemonic:
-  `abstract reform twelve inspire cry master vague skirt mention ill velvet nice limit input present old equip double best doctor decrease survey spray wife`
-- Index `0` BTC key hex:
-  `a22df5bf041dc0bc6a1e87da0566ed9dbe249ed80df615096f5f4a371c91d013`
-- Index `0` BTC WIF:
-  `L2ey2Dpr26eVD7JftNw5t5gn4NHotaJcaimtZFviuALpxe9BsVVx`
-- Index `0` BTC address:
-  `bc1qs5mlpxfrfzfacpme683an38tdf353vt0cry9g2`
+Known test vector: removed. The vector previously published here is burned
+because its mnemonic and private key are in public git history; never fund or
+reuse it. For dry-run validation, generate a fresh throwaway mnemonic locally,
+derive index `0` with the steps above, and keep the derived secrets out of the
+repository.
 
 ## Wallet/Tool Compatibility Notes
 

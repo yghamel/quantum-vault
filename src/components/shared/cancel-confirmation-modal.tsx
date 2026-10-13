@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, type ReactNode } from 'react';
 
 import { Modal } from '@/components/modal';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,8 @@ type CancelConfirmationModalProps = {
   isConfirmDisabled?: boolean;
   title?: string;
   description?: string;
+  /** Extra content between the description and the buttons. */
+  children?: ReactNode;
 };
 
 const defaultTitle = 'Are you sure?';
@@ -24,7 +26,8 @@ export const CancelConfirmationModal = ({
   onDismiss,
   isConfirmDisabled = false,
   title = defaultTitle,
-  description = defaultDescription
+  description = defaultDescription,
+  children
 }: CancelConfirmationModalProps) => {
   const panelRef = useRef<HTMLDivElement | null>(null);
 
@@ -55,6 +58,8 @@ export const CancelConfirmationModal = ({
             {description}
           </p>
         </div>
+
+        {children}
 
         <div className='flex flex-col gap-4'>
           <Button

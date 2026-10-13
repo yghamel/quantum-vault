@@ -1,7 +1,7 @@
 import { QuantumVaultMark } from '@/components/shared/quantum-vault-mark';
 import { Button } from '@/components/ui/button';
 import { useClickGate } from '@/hooks/use-click-gate';
-import { appCreditLine } from '@/lib/content';
+import { appLicenceLine, appName } from '@/lib/content';
 import { useEffect } from 'react';
 
 import { walletCreationStepContainerClassName } from '../core';
@@ -23,11 +23,11 @@ export const SuccessStep = ({ onContinue, onReady }: SuccessStepProps) => {
       <div className='flex flex-col gap-4'>
         <div className='flex flex-col gap-8 text-foreground'>
           <QuantumVaultMark className='size-10' />
-          <h1 className='type-heading-xl'>Quantum Vault Created</h1>
+          <h1 className='type-heading-xl'>Wallet Created</h1>
         </div>
         <p className='text-footer-muted text-base leading-normal'>
-          Quantum Vault is ready. Keep your recovery phrase safe - it's the only
-          way to restore access.
+          {appName} is ready. Keep your recovery phrase safe - it's the only way
+          to restore access.
         </p>
       </div>
 
@@ -36,7 +36,7 @@ export const SuccessStep = ({ onContinue, onReady }: SuccessStepProps) => {
           Open Vault
         </Button>
         <p className='text-footer-muted text-center text-xs leading-snug'>
-          {appCreditLine}
+          {appLicenceLine}
         </p>
       </div>
     </div>
