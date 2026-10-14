@@ -1,6 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
 import { checkSensitiveDataInHeap } from './heap-scanner';
-import { pasteRecoveryPhraseInput } from './helpers';
+import {
+  pasteRecoveryPhraseInput,
+  readRecoveryPhraseRevealPageWords
+} from './helpers';
 import { installDeterministicRecoveryNetwork } from './network-mocks';
 
 /**
@@ -8,7 +11,7 @@ import { installDeterministicRecoveryNetwork } from './network-mocks';
  *
  * Data Clearance Mechanism:
  * 1. React (Unmounting): When the view changes, React unmounts components,
- *    removing references to local state containing the mnemonic.
+ *    removing references to local state containing the recovery phrase.
  * 2. V8 engine (Garbage Collector): Once references vanish, the GC eventually
  *    purges the string from RAM.
  * We use 'HeapProfiler.collectGarbage' in these tests to force immediate GC.
@@ -38,7 +41,6 @@ const RECOVERY_MNEMONIC_STEPS = [
 const RECOVERY_MNEMONIC =
   RECOVERY_MNEMONIC_STEPS[RECOVERY_MNEMONIC_STEPS.length - 1];
 
-const wordsPerSeedRevealPage = 12;
 const totalMnemonicWordCount = 24;
 const entryRetryAttempts = 3;
 const entryStepTimeoutMs = 1500;
@@ -99,32 +101,15 @@ const waitForInitialEntryScreen = async (
   await targetButton.click();
 };
 
-const getMnemonicWordsFromGrid = (textContent: string): string[] => {
-  const words = [...textContent.matchAll(/\d+\.\s+([a-z]+)/g)].map(
-    ([, word]) => word
-  );
-
-  if (!words.length) {
-    throw new Error('Unable to parse recovery phrase words');
-  }
-
-  return words;
-};
-
 test.describe('Memory Protection: UI Sensitive Data @security', () => {
   test('should clear mnemonic from memory during Creation Flow', async ({
     page
   }) => {
     await installDeterministicRecoveryNetwork({ page });
 
-    page.on('console', msg =>
-      console.log(`[Browser Creation] ${msg.type()}: ${msg.text()}`)
-    );
-
     await page.goto('/');
     await resetClientStorage(page);
     await page.reload();
-    console.log(`[Creation Flow] URL:`, page.url());
 
     // 1. Start wallet creation
     await waitForInitialEntryScreen(page, 'create');
@@ -137,7 +122,6 @@ test.describe('Memory Protection: UI Sensitive Data @security', () => {
     await page.getByLabel('Confirm Password').fill(PASSWORD);
 
     // 3. Presence evidence (Password should be in memory while it's in UI)
-    console.log(`[Creation Flow] Verifying password presence evidence...`);
     await checkSensitiveDataInHeap({
       page,
       sensitiveDataSteps: [PASSWORD],
@@ -167,22 +151,12 @@ test.describe('Memory Protection: UI Sensitive Data @security', () => {
     await revealRecoveryPhraseButton.click({ force: true });
     await expect(clickToRevealButton).toBeVisible();
 
-    // 4. Read generated mnemonic from UI
+    // 4. Read generated recovery phrase from UI
     await expect(page.getByTestId('secret-phrase')).toContainText(' ');
     await clickToRevealButton.click();
-    const firstPageText = await page.getByTestId('secret-phrase').innerText();
-    const firstPageWords = getMnemonicWordsFromGrid(firstPageText);
-    expect(firstPageWords).toHaveLength(wordsPerSeedRevealPage);
-
-    await page.getByRole('button', { name: 'Next' }).click();
-    const secondPageText = await page.getByTestId('secret-phrase').innerText();
-    const secondPageWords = getMnemonicWordsFromGrid(secondPageText);
-    expect(secondPageWords).toHaveLength(wordsPerSeedRevealPage);
-
-    const mnemonicWords = [...firstPageWords, ...secondPageWords];
-    expect(mnemonicWords).toHaveLength(totalMnemonicWordCount);
-    const mnemonicPageOneMarker = `1. ${firstPageWords[0]}`;
-    const mnemonicPageTwoMarker = `13. ${secondPageWords[0]}`;
+    const recoveryWords = await readRecoveryPhraseRevealPageWords({ page });
+    expect(recoveryWords).toHaveLength(totalMnemonicWordCount);
+    const canonicalRecoveryPhrase = recoveryWords.join(' ');
 
     // 5. Complete creation process
     await page.getByRole('button', { name: 'I Wrote It Down' }).click();
@@ -193,15 +167,14 @@ test.describe('Memory Protection: UI Sensitive Data @security', () => {
       page.getByRole('heading', { name: 'Quantum Vault Wallet', exact: true })
     ).toBeVisible();
 
-    // 6. Final absence (Mnemonic and password should be cleared from heap).
-    // We check the full canonical phrase rather than splitting into individual
-    // BIP-39 words: every word in the phrase is also a member of the BIP-39
-    // wordlist that the bip39 library keeps loaded in heap permanently, so a
-    // per-word check would always report a false positive for "still present".
-    console.log(`[Creation Flow] Verifying final absence...`);
+    // 6. Final absence (recovery phrase and password should be cleared from
+    // heap). We check the full canonical phrase rather than individual BIP-39
+    // words: every word in the phrase is also a member of the BIP-39 wordlist
+    // that the bip39 library keeps loaded in heap permanently, so a per-word
+    // check would always report a false positive for "still present".
     await checkSensitiveDataInHeap({
       page,
-      sensitiveDataSteps: [mnemonicPageOneMarker, mnemonicPageTwoMarker],
+      sensitiveDataSteps: [canonicalRecoveryPhrase],
       expectPresent: false
     });
     await checkSensitiveDataInHeap({
@@ -216,17 +189,11 @@ test.describe('Memory Protection: UI Sensitive Data @security', () => {
   }) => {
     await installDeterministicRecoveryNetwork({ page });
 
-    page.on('console', msg =>
-      console.log(`[Browser Recovery] ${msg.type()}: ${msg.text()}`)
-    );
-
     await page.goto('/');
     await resetClientStorage(page);
     await page.reload();
-    console.log(`[Recovery Flow] URL:`, page.url());
 
-    // 1. Initial absence (Verify mnemonic is NOT present before entry)
-    console.log(`[Recovery Flow] Verifying initial absence...`);
+    // 1. Initial absence (Verify recovery phrase is NOT present before entry)
     await checkSensitiveDataInHeap({
       page,
       sensitiveDataSteps: RECOVERY_MNEMONIC_STEPS,
@@ -238,7 +205,7 @@ test.describe('Memory Protection: UI Sensitive Data @security', () => {
       expectPresent: false
     });
 
-    // 2. Start recovery and enter mnemonic
+    // 2. Start recovery and enter recovery phrase
     await waitForInitialEntryScreen(page, 'recover');
     await pasteRecoveryPhraseInput({ page, phrase: RECOVERY_MNEMONIC });
     const continueButton = page.locator('button:visible', {
@@ -260,7 +227,6 @@ test.describe('Memory Protection: UI Sensitive Data @security', () => {
     // Recovery phrase is stored as committed chip words, not necessarily as
     // one contiguous 24-word string in heap, so we assert password presence
     // here and verify phrase absence at the end of the flow.
-    console.log(`[Recovery Flow] Verifying presence evidence...`);
     await checkSensitiveDataInHeap({
       page,
       sensitiveDataSteps: [PASSWORD],
@@ -274,8 +240,7 @@ test.describe('Memory Protection: UI Sensitive Data @security', () => {
       page.getByRole('heading', { name: 'Quantum Vault Wallet', exact: true })
     ).toBeVisible();
 
-    // 6. Final absence (Mnemonic should be cleared from heap after flow completion)
-    console.log(`[Recovery Flow] Verifying final absence...`);
+    // 6. Final absence (recovery phrase should be cleared from heap after flow completion)
     await checkSensitiveDataInHeap({
       page,
       sensitiveDataSteps: RECOVERY_MNEMONIC_STEPS,
